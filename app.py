@@ -325,6 +325,48 @@ def get_status():
         })
 
 
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    try:
+        # 获取 mihomo 日志
+        # 尝试从 systemd journal 获取
+        logs = []
+        try:
+            result = subprocess.run(['journalctl', '-u', 'mihomo', '-n', '100', '--no-pager'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                logs = result.stdout.split('\n')
+        except:
+            pass
+        
+        # 如果 systemd 没有，尝试从 mihomo 的日志目录获取
+        if len(logs) == 0 or len(logs) <= 1:
+            log_dir = '/home/admin/.config/mihomo'
+            if os.path.exists(log_dir):
+                for filename in os.listdir(log_dir):
+                    if filename.endswith('.log'):
+                        log_path = os.path.join(log_dir, filename)
+                        try:
+                            with open(log_path, 'r', encoding='utf-8') as f:
+                                # 取最后 100 行
+                                lines = f.read().split('\n')
+                                logs = lines[-100:]
+                                break
+                        except:
+                            pass
+        
+        return jsonify({
+            'success': True,
+            'logs': [line for line in logs if line.strip()],
+            'source': 'systemd' if len(logs) > 0 and 'journalctl' in str(subprocess.run('which journalctl', shell=True, capture_output=True, text=True).stdout) else 'file'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
 @app.route('/api/restart', methods=['POST'])
 def restart():
     success, message = restart_mihomo()

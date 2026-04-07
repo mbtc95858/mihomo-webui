@@ -342,6 +342,12 @@
             <a class="sidebar-link" data-section="status">
                 <i class="bi bi-display"></i><span>状态监控</span>
             </a>
+            <a class="sidebar-link" data-section="logs">
+                <i class="bi bi-journal-text"></i><span>日志查看</span>
+            </a>
+            <a class="sidebar-link" data-section="topology">
+                <i class="bi bi-diagram-3-fill"></i><span>拓扑图</span>
+            </a>
             <div class="px-3 py-2">
                 <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">其他</small>
             </div>
@@ -926,6 +932,55 @@
                 </div>
             </div>
 
+            <div class="content-section" id="section-logs">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Mihomo 日志</h5>
+                        <div class="d-flex gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="logsAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="logsAutoRefreshToggle">自动刷新</label>
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshLogsBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                            <button class="btn btn-outline-secondary" id="clearLogsBtn">
+                                <i class="bi bi-eraser me-1"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="p-3 bg-dark text-light" style="min-height: 500px; max-height: 70vh; overflow-y: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px;" id="logsContainer">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载日志中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-topology">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-diagram-3-fill me-2"></i>代理组拓扑图</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary" id="refreshTopologyBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="topologyContainer" style="min-height: 600px; background: #f8fafc; border-radius: 0.5rem; overflow: hidden;">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载拓扑图中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-section" id="section-raw-editor">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -1182,6 +1237,8 @@
                 'proxy-groups': '代理组',
                 'rules': '规则',
                 'status': '状态监控',
+                'logs': '日志查看',
+                'topology': '拓扑图',
                 'raw-editor': '原始编辑器'
             };
             document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
@@ -1776,6 +1833,141 @@
         document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
         document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
         
+        // 日志功能
+        let logsAutoRefreshEnabled = true;
+        let logsRefreshInterval = null;
+        
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                if (data.success) {
+                    const container = document.getElementById('logsContainer');
+                    if (data.logs.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-2">暂无日志</p>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = data.logs.map(line => {
+                            let color = '#e2e8f0';
+                            if (line.toLowerCase().includes('error') || line.toLowerCase().includes('err')) {
+                                color = '#fca5a5';
+                            } else if (line.toLowerCase().includes('warn')) {
+                                color = '#fcd34d';
+                            } else if (line.toLowerCase().includes('info')) {
+                                color = '#93c5fd';
+                            }
+                            return `<div style="margin-bottom: 4px; color: ${color};">${escapeHtml(line)}</div>`;
+                        }).join('');
+                        // 滚动到底部
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+        
+        function startLogsAutoRefresh() {
+            if (logsRefreshInterval) return;
+            logsRefreshInterval = setInterval(loadLogs, 5000);
+        }
+        
+        function stopLogsAutoRefresh() {
+            if (logsRefreshInterval) {
+                clearInterval(logsRefreshInterval);
+                logsRefreshInterval = null;
+            }
+        }
+        
+        const logsAutoRefreshToggle = document.getElementById('logsAutoRefreshToggle');
+        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+        const clearLogsBtn = document.getElementById('clearLogsBtn');
+        
+        if (logsAutoRefreshToggle) {
+            logsAutoRefreshToggle.addEventListener('change', (e) => {
+                logsAutoRefreshEnabled = e.target.checked;
+                if (logsAutoRefreshEnabled) {
+                    startLogsAutoRefresh();
+                } else {
+                    stopLogsAutoRefresh();
+                }
+            });
+        }
+        
+        if (refreshLogsBtn) {
+            refreshLogsBtn.addEventListener('click', loadLogs);
+        }
+        
+        if (clearLogsBtn) {
+            clearLogsBtn.addEventListener('click', () => {
+                document.getElementById('logsContainer').innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-check-circle" style="font-size: 3rem; color: #22c55e;"></i>
+                        <p class="mt-2">已清空</p>
+                    </div>
+                `;
+            });
+        }
+        
+        // 拓扑图功能
+        function renderTopology() {
+            const container = document.getElementById('topologyContainer');
+            const groups = config['proxy-groups'] || [];
+            
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无代理组</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 创建简单的拓扑图可视化
+            let html = `<div style="padding: 2rem; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">`;
+            
+            groups.forEach((group, index) => {
+                const color = `hsl(${(index * 60) % 360}, 70%, 60%)`;
+                const proxies = group.proxies || [];
+                
+                html += `
+                    <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: ${color}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.25rem;">
+                                ${group.name ? group.name.charAt(0).toUpperCase() : '?'}
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 700;">${escapeHtml(group.name || '未命名')}</h6>
+                                <span class="badge bg-secondary">${group.type || 'select'}</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                            <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">代理节点 (${proxies.length})</h6>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                ${proxies.slice(0, 8).map(proxy => 
+                                    `<span class="badge bg-light text-dark" style="border: 1px solid #e2e8f0;">${escapeHtml(proxy)}</span>`
+                                ).join('')}
+                                ${proxies.length > 8 ? `<span class="badge bg-light text-dark" style="border: 1px solid #e2e8f0;">+${proxies.length - 8} 更多</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+        
+        const refreshTopologyBtn = document.getElementById('refreshTopologyBtn');
+        if (refreshTopologyBtn) {
+            refreshTopologyBtn.addEventListener('click', renderTopology);
+        }
+        
         // 详细状态页面的按钮
         const detailRefreshBtn = document.getElementById('detailRefreshBtn');
         const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
@@ -1797,6 +1989,9 @@
             loadRawConfig();
             updateStatus();
             startAutoRefresh();
+            loadLogs();
+            startLogsAutoRefresh();
+            renderTopology();
         });
     </script>
 </body>
