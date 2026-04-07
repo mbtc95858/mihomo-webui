@@ -5,15 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mihomo WebUI</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .editor-container {
-            height: 70vh;
+        :root {
+            --sidebar-width: 280px;
         }
-        #configEditor {
-            height: 100%;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: none;
+        body {
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #1e3a5f 0%, #0f2744 100%);
+            color: white;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .sidebar-link i {
+            width: 24px;
+            margin-right: 12px;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
         .toast-container {
             position: fixed;
@@ -21,72 +68,292 @@
             right: 20px;
             z-index: 9999;
         }
+        .editor-container {
+            height: 70vh;
+        }
+        #rawConfigEditor {
+            height: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+        }
+        .proxy-group-item, .rule-item {
+            transition: all 0.2s;
+        }
+        .proxy-group-item:hover, .rule-item:hover {
+            background-color: #f8f9fa;
+        }
+        .btn-action {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .proxy-group-item:hover .btn-action,
+        .rule-item:hover .btn-action {
+            opacity: 1;
+        }
+        .badge-type {
+            font-size: 0.7rem;
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
     <div class="toast-container" id="toastContainer"></div>
     
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <span class="fw-bold">Mihomo WebUI</span>
-            </a>
-            <div class="ms-auto">
-                <button class="btn btn-light me-2" id="saveBtn">
-                    <span class="me-1">💾</span> 保存配置
-                </button>
-                <button class="btn btn-warning" id="restartBtn">
-                    <span class="me-1">🔄</span> 重启服务
-                </button>
-            </div>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4 class="mb-0"><i class="bi bi-hurricane me-2"></i>Mihomo WebUI</h4>
         </div>
-    </nav>
+        <nav class="sidebar-nav">
+            <a class="sidebar-link active" data-section="dashboard">
+                <i class="bi bi-speedometer2"></i>
+                <span>仪表盘</span>
+            </a>
+            <a class="sidebar-link" data-section="proxy-groups">
+                <i class="bi bi-diagram-3"></i>
+                <span>代理组</span>
+            </a>
+            <a class="sidebar-link" data-section="rules">
+                <i class="bi bi-list-check"></i>
+                <span>规则</span>
+            </a>
+            <a class="sidebar-link" data-section="raw-editor">
+                <i class="bi bi-code-slash"></i>
+                <span>原始编辑器</span>
+            </a>
+            <div class="dropdown-divider my-2 border-white border-opacity-25"></div>
+            <a class="sidebar-link" id="restartServiceBtn">
+                <i class="bi bi-arrow-repeat"></i>
+                <span>重启服务</span>
+            </a>
+        </nav>
+    </div>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">config.yaml</h5>
-                        <button class="btn btn-sm btn-outline-secondary" id="loadBtn">
-                            <span class="me-1">📥</span> 重新加载
-                        </button>
-                    </div>
-                    <div class="card-body p-0 editor-container">
-                        <textarea class="form-control border-0 rounded-0" id="configEditor" spellcheck="false"></textarea>
-                    </div>
+    <div class="main-content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+            <div class="container-fluid">
+                <span class="navbar-brand" id="currentSectionTitle">仪表盘</span>
+                <div class="ms-auto">
+                    <button class="btn btn-outline-secondary me-2" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                    </button>
+                    <button class="btn btn-primary" id="saveAllBtn">
+                        <i class="bi bi-save me-1"></i> 保存全部
+                    </button>
                 </div>
             </div>
-        </div>
+        </nav>
 
-        <div class="row mt-4">
-            <div class="col-md-4">
+        <div class="container-fluid p-4">
+            <div class="content-section active" id="section-dashboard">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                        <i class="bi bi-diagram-3 text-primary fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted mb-0">代理组</h6>
+                                        <h3 class="mb-0" id="proxyGroupCount">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                        <i class="bi bi-list-check text-success fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted mb-0">规则</h6>
+                                        <h3 class="mb-0" id="ruleCount">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                                        <i class="bi bi-box text-info fs-4"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="text-muted mb-0">规则提供程序</h6>
+                                        <h3 class="mb-0" id="ruleProviderCount">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header bg-white">
-                        <h6 class="mb-0">📋 快捷操作</h6>
+                        <h5 class="mb-0">快捷操作</h5>
                     </div>
                     <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-outline-primary" id="backupBtn">
-                                备份当前配置
-                            </button>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-primary w-100" onclick="switchSection('proxy-groups')">
+                                    <i class="bi bi-diagram-3 me-2"></i>管理代理组
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-success w-100" onclick="switchSection('rules')">
+                                    <i class="bi bi-list-check me-2"></i>管理规则
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-info w-100" onclick="switchSection('raw-editor')">
+                                    <i class="bi bi-code-slash me-2"></i>原始编辑
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-warning w-100" onclick="restartService()">
+                                    <i class="bi bi-arrow-repeat me-2"></i>重启服务
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-8">
+
+            <div class="content-section" id="section-proxy-groups">
                 <div class="card">
-                    <div class="card-header bg-white">
-                        <h6 class="mb-0">💡 使用说明</h6>
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">代理组</h5>
+                        <button class="btn btn-primary btn-sm" id="addProxyGroupBtn">
+                            <i class="bi bi-plus me-1"></i> 添加代理组
+                        </button>
                     </div>
-                    <div class="card-body">
-                        <ul class="mb-0">
-                            <li>编辑配置后点击「保存配置」按钮保存</li>
-                            <li>保存后点击「重启服务」使配置生效</li>
-                            <li>保存前会自动备份原配置到 config.yaml.backup</li>
-                            <li>修改配置前建议先备份</li>
-                        </ul>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="proxyGroupsList">
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-rules">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">规则</h5>
+                        <button class="btn btn-primary btn-sm" id="addRuleBtn">
+                            <i class="bi bi-plus me-1"></i> 添加规则
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="rulesList">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-raw-editor">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">config.yaml</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" id="loadRawConfigBtn">
+                                <i class="bi bi-download me-1"></i> 重新加载
+                            </button>
+                            <button class="btn btn-sm btn-primary" id="saveRawConfigBtn">
+                                <i class="bi bi-save me-1"></i> 保存
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0 editor-container">
+                        <textarea class="form-control border-0 rounded-0" id="rawConfigEditor" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="proxyGroupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="proxyGroupModalTitle">编辑代理组</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="proxyGroupForm">
+                        <div class="mb-3">
+                            <label class="form-label">名称</label>
+                            <input type="text" class="form-control" id="proxyGroupName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">类型</label>
+                            <select class="form-select" id="proxyGroupType" required>
+                                <option value="select">select</option>
+                                <option value="url-test">url-test</option>
+                                <option value="fallback">fallback</option>
+                                <option value="load-balance">load-balance</option>
+                                <option value="relay">relay</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">代理（每行一个）</label>
+                            <textarea class="form-control" id="proxyGroupProxies" rows="8"></textarea>
+                        </div>
+                        <div id="proxyGroupExtraFields"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveProxyGroupBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ruleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ruleModalTitle">编辑规则</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ruleForm">
+                        <div class="mb-3">
+                            <label class="form-label">规则类型</label>
+                            <select class="form-select" id="ruleType" required>
+                                <option value="DOMAIN">DOMAIN</option>
+                                <option value="DOMAIN-SUFFIX">DOMAIN-SUFFIX</option>
+                                <option value="DOMAIN-KEYWORD">DOMAIN-KEYWORD</option>
+                                <option value="GEOSITE">GEOSITE</option>
+                                <option value="GEOIP">GEOIP</option>
+                                <option value="IP-CIDR">IP-CIDR</option>
+                                <option value="IP-CIDR6">IP-CIDR6</option>
+                                <option value="SRC-IP-CIDR">SRC-IP-CIDR</option>
+                                <option value="RULE-SET">RULE-SET</option>
+                                <option value="MATCH">MATCH</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">值</label>
+                            <input type="text" class="form-control" id="ruleValue">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">策略/代理组</label>
+                            <input type="text" class="form-control" id="rulePolicy" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">参数（可选，如 no-resolve）</label>
+                            <input type="text" class="form-control" id="ruleParams">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveRuleBtn">保存</button>
                 </div>
             </div>
         </div>
@@ -94,7 +361,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let originalConfig = '';
+        let config = {};
+        let rawConfig = '';
+        let editingProxyGroupIndex = -1;
+        let editingRuleIndex = -1;
+        const proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
+        const ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
 
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer');
@@ -103,9 +375,7 @@
             
             toastContainer.innerHTML += `
                 <div id="${toastId}" class="toast ${bgClass} text-white" role="alert">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
+                    <div class="toast-body">${message}</div>
                 </div>
             `;
             
@@ -118,15 +388,37 @@
             }, 5000);
         }
 
+        function switchSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('section-' + sectionId).classList.add('active');
+            document.querySelector(`[data-section="${sectionId}"]`)?.classList.add('active');
+            
+            const titles = {
+                'dashboard': '仪表盘',
+                'proxy-groups': '代理组',
+                'rules': '规则',
+                'raw-editor': '原始编辑器'
+            };
+            document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
+        }
+
+        document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+            link.addEventListener('click', () => {
+                switchSection(link.dataset.section);
+            });
+        });
+
         async function loadConfig() {
             try {
                 const response = await fetch('/api/config');
                 const data = await response.json();
-                
                 if (data.success) {
-                    document.getElementById('configEditor').value = data.config;
-                    originalConfig = data.config;
-                    showToast('配置加载成功');
+                    config = data.config;
+                    updateDashboard();
+                    renderProxyGroups();
+                    renderRules();
                 } else {
                     showToast('加载失败: ' + data.error, 'error');
                 }
@@ -135,23 +427,34 @@
             }
         }
 
-        async function saveConfig() {
-            const config = document.getElementById('configEditor').value;
-            
+        async function loadRawConfig() {
             try {
-                const response = await fetch('/api/config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ config })
-                });
-                
+                const response = await fetch('/api/config/raw');
                 const data = await response.json();
-                
                 if (data.success) {
-                    originalConfig = config;
+                    rawConfig = data.config;
+                    document.getElementById('rawConfigEditor').value = rawConfig;
+                } else {
+                    showToast('加载失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        async function saveRawConfig() {
+            try {
+                const content = document.getElementById('rawConfigEditor').value;
+                const response = await fetch('/api/config/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: content })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    rawConfig = content;
                     showToast(data.message);
+                    await loadConfig();
                 } else {
                     showToast('保存失败: ' + data.error, 'error');
                 }
@@ -160,36 +463,19 @@
             }
         }
 
-        async function restartService() {
-            if (!confirm('确定要重启 Mihomo 服务吗？')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/restart', {
-                    method: 'POST'
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast(data.message);
-                } else {
-                    showToast(data.message, 'error');
-                }
-            } catch (error) {
-                showToast('重启失败: ' + error.message, 'error');
-            }
+        function updateDashboard() {
+            document.getElementById('proxyGroupCount').textContent = (config['proxy-groups'] || []).length;
+            document.getElementById('ruleCount').textContent = (config['rules'] || []).length;
+            document.getElementById('ruleProviderCount').textContent = Object.keys(config['rule-providers'] || {}).length;
         }
 
-        document.getElementById('loadBtn').addEventListener('click', loadConfig);
-        document.getElementById('saveBtn').addEventListener('click', saveConfig);
-        document.getElementById('restartBtn').addEventListener('click', restartService);
-        document.getElementById('backupBtn').addEventListener('click', () => {
-            showToast('每次保存时会自动备份到 config.yaml.backup', 'warning');
-        });
-
-        document.addEventListener('DOMContentLoaded', loadConfig);
-    </script>
-</body>
-</html>
+        function renderProxyGroups() {
+            const list = document.getElementById('proxyGroupsList');
+            const groups = config['proxy-groups'] || [];
+            
+            list.innerHTML = groups.map((group, index) => `
+                <div class="list-group-item proxy-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${escapeHtml(group.name)}</h6>
+                        <span class="badge badge-type bg-secondary me-1">${escapeHtml(group.type)}</span>
+                        <small class="text-muted">${group.proxies
