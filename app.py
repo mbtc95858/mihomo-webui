@@ -105,8 +105,22 @@ def get_config():
 def update_config():
     try:
         data = request.get_json()
-        config = data.get('config', {})
-        save_config(config)
+        new_config = data.get('config', {})
+        # 加载原始配置，确保不丢失任何配置项
+        original_config = load_config()
+        
+        # 合并配置：只更新新配置中有值的部分，保留原始配置的其他所有项
+        def deep_merge(original, update):
+            result = original.copy()
+            for key, value in update.items():
+                if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+                    result[key] = deep_merge(result[key], value)
+                else:
+                    result[key] = value
+            return result
+        
+        merged_config = deep_merge(original_config, new_config)
+        save_config(merged_config)
         return jsonify({
             'success': True,
             'message': '配置保存成功'

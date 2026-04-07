@@ -523,9 +523,9 @@
                     <div class="card-body">
                         <div class="config-category">
                             <h6>基本设置</h6>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-enable">
                                         <label class="form-check-label" for="config-tun-enable">启用 TUN</label>
                                     </div>
@@ -544,46 +544,42 @@
                         </div>
                         <div class="config-category">
                             <h6>高级设置</h6>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">DNS 劫持 (dns-hijack)</label>
                                     <input type="text" class="form-control" id="config-tun-dns-hijack" placeholder="0.0.0.0:53">
                                     <div class="form-text">劫持 DNS 请求（多个用逗号分隔）</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-auto-detect-interface">
                                         <label class="form-check-label" for="config-tun-auto-detect-interface">自动识别接口</label>
                                     </div>
                                     <div class="form-text">自动识别默认出口网络接口</div>
                                 </div>
-                            </div>
-                            <div class="row mt-3">
                                 <div class="col-md-4">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-auto-route">
                                         <label class="form-check-label" for="config-tun-auto-route">自动路由</label>
                                     </div>
                                     <div class="form-text">自动添加系统路由表</div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-auto-redirect">
                                         <label class="form-check-label" for="config-tun-auto-redirect">自动重定向</label>
                                     </div>
                                     <div class="form-text">自动将流量重定向至 TUN</div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-strict-route">
                                         <label class="form-check-label" for="config-tun-strict-route">严格路由</label>
                                     </div>
                                     <div class="form-text">启用严格路由模式</div>
                                 </div>
-                            </div>
-                            <div class="row mt-3">
                                 <div class="col-md-12">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-tun-endpoint-independent-nat">
                                         <label class="form-check-label" for="config-tun-endpoint-independent-nat">端点无关 NAT</label>
                                     </div>
@@ -658,32 +654,30 @@
                     <div class="card-body">
                         <div class="config-category">
                             <h6>基本设置</h6>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-sniffer-enable">
                                         <label class="form-check-label" for="config-sniffer-enable">启用嗅探</label>
                                     </div>
                                     <div class="form-text">提升分流准确性</div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-sniffer-override-destination">
                                         <label class="form-check-label" for="config-sniffer-override-destination">覆盖目标地址</label>
                                     </div>
                                     <div class="form-text">使用嗅探到的域名覆盖原始目标地址</div>
                                 </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-md-4">
-                                    <div class="form-check form-switch">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-sniffer-parse-pure-ip">
                                         <label class="form-check-label" for="config-sniffer-parse-pure-ip">解析纯 IP</label>
                                     </div>
                                     <div class="form-text">尝试反向解析获得域名</div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-check form-switch">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
                                         <input class="form-check-input" type="checkbox" id="config-sniffer-force-dns-mapping">
                                         <label class="form-check-label" for="config-sniffer-force-dns-mapping">强制 DNS 映射</label>
                                     </div>
