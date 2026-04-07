@@ -1847,6 +1847,12 @@
                     // 更新详细状态页面
                     const detailStatusDot = document.getElementById('detailStatusDot');
                     const detailStatusText = document.getElementById('detailStatusText');
+                    const detailVersion = document.getElementById('detailVersion');
+                    const detailMode = document.getElementById('detailMode');
+                    const detailMixedPort = document.getElementById('detailMixedPort');
+                    const detailAllowLan = document.getElementById('detailAllowLan');
+                    const detailTunEnabled = document.getElementById('detailTunEnabled');
+                    const detailPorts = document.getElementById('detailPorts');
                     
                     if (status.running) {
                         // 顶部状态栏
@@ -1879,12 +1885,6 @@
                         document.getElementById('detailCommand').textContent = status.command || '-';
                         
                         // 更新 Mihomo 运行信息
-                        const detailVersion = document.getElementById('detailVersion');
-                        const detailMode = document.getElementById('detailMode');
-                        const detailMixedPort = document.getElementById('detailMixedPort');
-                        const detailAllowLan = document.getElementById('detailAllowLan');
-                        const detailTunEnabled = document.getElementById('detailTunEnabled');
-                        
                         if (detailVersion) detailVersion.textContent = status.version || '-';
                         if (detailMode) detailMode.textContent = status.mode || '-';
                         if (detailMixedPort) detailMixedPort.textContent = status.mixed_port || '-';
@@ -1898,7 +1898,6 @@
                         }
                         
                         // 更新端口
-                        const detailPorts = document.getElementById('detailPorts');
                         if (detailPorts) {
                             if (status.ports.length > 0) {
                                 detailPorts.innerHTML = status.ports.map(port => 
@@ -1938,12 +1937,6 @@
                         document.getElementById('detailCommand').textContent = '-';
                         
                         // 清空 Mihomo 运行信息
-                        const detailVersion = document.getElementById('detailVersion');
-                        const detailMode = document.getElementById('detailMode');
-                        const detailMixedPort = document.getElementById('detailMixedPort');
-                        const detailAllowLan = document.getElementById('detailAllowLan');
-                        const detailTunEnabled = document.getElementById('detailTunEnabled');
-                        
                         if (detailVersion) detailVersion.textContent = '-';
                         if (detailMode) detailMode.textContent = '-';
                         if (detailMixedPort) detailMixedPort.textContent = '-';
@@ -1956,7 +1949,6 @@
                             detailTunEnabled.className = 'fw-bold';
                         }
                         
-                        const detailPorts = document.getElementById('detailPorts');
                         if (detailPorts) {
                             detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
                         }
@@ -1964,8 +1956,10 @@
                 }
             } catch (error) {
                 console.error('获取状态失败:', error);
-                document.getElementById('statusDot').classList.remove('running');
-                document.getElementById('statusText').textContent = '获取失败';
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                if (statusDot) statusDot.classList.remove('running');
+                if (statusText) statusText.textContent = '获取失败';
             }
         }
 
