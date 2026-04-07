@@ -263,7 +263,12 @@ def get_status():
             'memory': None,
             'uptime': None,
             'command': None,
-            'ports': []
+            'ports': [],
+            'version': None,
+            'mode': None,
+            'mixed_port': None,
+            'allow_lan': False,
+            'tun_enabled': False
         }
         
         # 获取进程信息
@@ -314,6 +319,35 @@ def get_status():
                                         status['ports'].append(port)
                 except:
                     pass
+        
+        # 从 Mihomo API 获取额外信息
+        try:
+            controller_url = 'http://127.0.0.1:9090'
+            secret = '123456'
+            headers = {'Authorization': f'Bearer {secret}'}
+            
+            # 获取版本信息
+            try:
+                version_response = requests.get(f'{controller_url}/version', headers=headers, timeout=2)
+                if version_response.status_code == 200:
+                    status['version'] = version_response.json().get('version')
+            except:
+                pass
+            
+            # 获取运行配置
+            try:
+                config_response = requests.get(f'{controller_url}/configs', headers=headers, timeout=2)
+                if config_response.status_code == 200:
+                    config_data = config_response.json()
+                    status['mode'] = config_data.get('mode')
+                    status['mixed_port'] = config_data.get('mixed-port')
+                    status['allow_lan'] = config_data.get('allow-lan', False)
+                    tun_config = config_data.get('tun', {})
+                    status['tun_enabled'] = tun_config.get('enable', False) if isinstance(tun_config, dict) else False
+            except:
+                pass
+        except:
+            pass
         
         return jsonify({
             'success': True,

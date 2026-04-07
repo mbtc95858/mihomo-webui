@@ -886,14 +886,49 @@
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>网络信息</h5>
+                                <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Mihomo 运行信息</h5>
                             </div>
                             <div class="card-body">
+                                <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>运行状态</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-box-seam me-2"></i>版本</span>
+                                            <strong id="detailVersion">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-radar me-2"></i>运行模式</span>
+                                            <strong id="detailMode">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-globe me-2"></i>混合端口</span>
+                                            <strong id="detailMixedPort">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-router me-2"></i>局域网</span>
+                                            <strong id="detailAllowLan">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-wifi me-2"></i>TUN 模式</span>
+                                            <strong id="detailTunEnabled">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <h6 class="mb-3"><i class="bi bi-plug me-2"></i>监听端口</h6>
                                 <div class="d-flex flex-wrap gap-2 mb-4" id="detailPorts">
                                     <span class="text-muted">暂无端口</span>
                                 </div>
-                                <h6 class="mb-3"><i class="bi bi-gear me-2"></i>配置信息</h6>
+                                
+                                <h6 class="mb-3"><i class="bi bi-gear me-2"></i>配置统计</h6>
                                 <div class="row g-3">
                                     <div class="col-12">
                                         <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
@@ -1843,6 +1878,25 @@
                         document.getElementById('detailUptime').textContent = status.uptime || '-';
                         document.getElementById('detailCommand').textContent = status.command || '-';
                         
+                        // 更新 Mihomo 运行信息
+                        const detailVersion = document.getElementById('detailVersion');
+                        const detailMode = document.getElementById('detailMode');
+                        const detailMixedPort = document.getElementById('detailMixedPort');
+                        const detailAllowLan = document.getElementById('detailAllowLan');
+                        const detailTunEnabled = document.getElementById('detailTunEnabled');
+                        
+                        if (detailVersion) detailVersion.textContent = status.version || '-';
+                        if (detailMode) detailMode.textContent = status.mode || '-';
+                        if (detailMixedPort) detailMixedPort.textContent = status.mixed_port || '-';
+                        if (detailAllowLan) {
+                            detailAllowLan.textContent = status.allow_lan ? '开启' : '关闭';
+                            detailAllowLan.className = status.allow_lan ? 'fw-bold text-success' : 'fw-bold text-muted';
+                        }
+                        if (detailTunEnabled) {
+                            detailTunEnabled.textContent = status.tun_enabled ? '开启' : '关闭';
+                            detailTunEnabled.className = status.tun_enabled ? 'fw-bold text-success' : 'fw-bold text-muted';
+                        }
+                        
                         // 更新端口
                         const detailPorts = document.getElementById('detailPorts');
                         if (detailPorts) {
@@ -1882,6 +1936,25 @@
                         document.getElementById('detailMemory').textContent = '-';
                         document.getElementById('detailUptime').textContent = '-';
                         document.getElementById('detailCommand').textContent = '-';
+                        
+                        // 清空 Mihomo 运行信息
+                        const detailVersion = document.getElementById('detailVersion');
+                        const detailMode = document.getElementById('detailMode');
+                        const detailMixedPort = document.getElementById('detailMixedPort');
+                        const detailAllowLan = document.getElementById('detailAllowLan');
+                        const detailTunEnabled = document.getElementById('detailTunEnabled');
+                        
+                        if (detailVersion) detailVersion.textContent = '-';
+                        if (detailMode) detailMode.textContent = '-';
+                        if (detailMixedPort) detailMixedPort.textContent = '-';
+                        if (detailAllowLan) {
+                            detailAllowLan.textContent = '-';
+                            detailAllowLan.className = 'fw-bold';
+                        }
+                        if (detailTunEnabled) {
+                            detailTunEnabled.textContent = '-';
+                            detailTunEnabled.className = 'fw-bold';
+                        }
                         
                         const detailPorts = document.getElementById('detailPorts');
                         if (detailPorts) {
