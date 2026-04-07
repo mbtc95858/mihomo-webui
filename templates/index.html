@@ -795,11 +795,21 @@
                 <div class="card">
                     <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
                         <h5 class="mb-0">规则</h5>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 flex-wrap">
                             <div class="search-box">
                                 <i class="bi bi-search"></i>
                                 <input type="text" class="form-control" id="ruleSearch" placeholder="搜索规则...">
                             </div>
+                            <select class="form-select" style="width: auto;" id="ruleSortSelect">
+                                <option value="default">默认顺序</option>
+                                <option value="type-asc">按类型 ↑</option>
+                                <option value="type-desc">按类型 ↓</option>
+                                <option value="policy-asc">按策略 ↑</option>
+                                <option value="policy-desc">按策略 ↓</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" id="resetRuleOrderBtn">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> 重置顺序
+                            </button>
                             <button class="btn btn-primary" id="addRuleBtn">
                                 <i class="bi bi-plus me-1"></i> 添加规则
                             </button>
@@ -1026,6 +1036,8 @@
         let editingRuleIndex = -1;
         let proxyGroupSearchTerm = '';
         let ruleSearchTerm = '';
+        let originalRules = [];
+        let currentRuleSort = 'default';
         const proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
         const ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
 
@@ -1193,6 +1205,10 @@
                 const data = await response.json();
                 if (data.success) {
                     config = data.config;
+                    // 保存原始规则顺序
+                    originalRules = [...(config.rules || [])];
+                    currentRuleSort = 'default';
+                    document.getElementById('ruleSortSelect').value = 'default';
                     updateDashboard();
                     loadConfigToForm();
                     renderProxyGroups();
@@ -1304,9 +1320,58 @@
             }).join('');
         }
 
+        function parseRule(rule) {
+            if (typeof rule !== 'string') {
+                return { type: 'object', value: '', policy: '' };
+            }
+            const parts = rule.split(',');
+            return {
+                type: parts[0] || '',
+                value: parts[1] || '',
+                policy: parts[2] || ''
+            };
+        }
+
+        function sortRules(rules, sortType) {
+            const rulesCopy = [...rules];
+            switch (sortType) {
+                case 'type-asc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pa.type.localeCompare(pb.type);
+                    });
+                case 'type-desc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pb.type.localeCompare(pa.type);
+                    });
+                case 'policy-asc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pa.policy.localeCompare(pb.policy);
+                    });
+                case 'policy-desc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pb.policy.localeCompare(pa.policy);
+                    });
+                case 'default':
+                default:
+                    return [...originalRules];
+            }
+        }
+
         function renderRules() {
             const list = document.getElementById('rulesList');
-            const rules = (config['rules'] || []).filter((rule, index) => {
+            let rules = currentRuleSort === 'default' 
+                ? (config['rules'] || []) 
+                : sortRules(config['rules'] || [], currentRuleSort);
+            
+            rules = rules.filter((rule, index) => {
                 if (!ruleSearchTerm) return true;
                 const term = ruleSearchTerm.toLowerCase();
                 const ruleStr = typeof rule === 'string' ? rule : JSON.stringify(rule);
@@ -1336,6 +1401,7 @@
                     ruleType = 'Object';
                     ruleText = JSON.stringify(rule);
                 }
+                const isSorted = currentRuleSort !== 'default';
                 return `
                     <div class="list-group-item rule-item d-flex justify-content-between align-items-center">
                         <div class="flex-grow-1 me-3">
@@ -1345,10 +1411,10 @@
                             </div>
                         </div>
                         <div class="d-flex gap-1">
-                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, -1)" ${originalIndex === 0 ? 'disabled' : ''}>
+                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, -1)" ${isSorted || originalIndex === 0 ? 'disabled' : ''}>
                                 <i class="bi bi-arrow-up"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, 1)" ${originalIndex === (config['rules'] || []).length - 1 ? 'disabled' : ''}>
+                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, 1)" ${isSorted || originalIndex === (config['rules'] || []).length - 1 ? 'disabled' : ''}>
                                 <i class="bi bi-arrow-down"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-primary btn-action" onclick="editRule(${originalIndex})">
@@ -1371,6 +1437,19 @@
         document.getElementById('ruleSearch').addEventListener('input', (e) => {
             ruleSearchTerm = e.target.value;
             renderRules();
+        });
+
+        document.getElementById('ruleSortSelect').addEventListener('change', (e) => {
+            currentRuleSort = e.target.value;
+            renderRules();
+        });
+
+        document.getElementById('resetRuleOrderBtn').addEventListener('click', () => {
+            currentRuleSort = 'default';
+            document.getElementById('ruleSortSelect').value = 'default';
+            // 恢复原始规则顺序
+            config.rules = [...originalRules];
+            saveAllConfig();
         });
 
         document.getElementById('addProxyGroupBtn').addEventListener('click', () => {
@@ -1483,7 +1562,8 @@
                 config['rules'][editingRuleIndex] = rule;
             } else {
                 if (!config['rules']) config['rules'] = [];
-                config['rules'].push(rule);
+                // 新规则添加到最上方
+                config['rules'].unshift(rule);
             }
             
             await saveAllConfig();
@@ -1517,6 +1597,8 @@
                 });
                 const data = await response.json();
                 if (data.success) {
+                    // 保存成功后更新原始规则顺序
+                    originalRules = [...(config.rules || [])];
                     showToast(data.message);
                     updateDashboard();
                     renderProxyGroups();
