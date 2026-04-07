@@ -148,6 +148,42 @@
             resize: none;
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
+        }
+        .status-bar {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #334155;
+        }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2rem;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.running {
+            background: #22c55e;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .status-item i { font-size: 1rem; }
             padding: 1rem;
         }
         #rawConfigEditor:focus {
@@ -315,6 +351,46 @@
     </div>
 
     <div class="main-content">
+        <div class="status-bar">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-4 flex-wrap">
+                    <div class="status-indicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">检查中...</span>
+                    </div>
+                    <div class="status-item" id="statusPid" style="display: none;">
+                        <i class="bi bi-cpu"></i>
+                        <span>PID: <span id="pidValue">-</span></span>
+                    </div>
+                    <div class="status-item" id="statusCpu" style="display: none;">
+                        <i class="bi bi-activity"></i>
+                        <span>CPU: <span id="cpuValue">-</span>%</span>
+                    </div>
+                    <div class="status-item" id="statusMemory" style="display: none;">
+                        <i class="bi bi-memory"></i>
+                        <span>内存: <span id="memoryValue">-</span>%</span>
+                    </div>
+                    <div class="status-item" id="statusPorts" style="display: none;">
+                        <i class="bi bi-diagram-2"></i>
+                        <span>端口: <span id="portsValue">-</span></span>
+                    </div>
+                    <div class="status-item" id="statusUptime" style="display: none;">
+                        <i class="bi bi-clock-history"></i>
+                        <span>启动: <span id="uptimeValue">-</span></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="small text-muted">自动刷新:</span>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label text-muted" for="autoRefreshToggle">3秒</label>
+                    </div>
+                    <button class="btn btn-outline-light btn-sm" id="refreshStatusBtn">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="top-nav d-flex justify-content-between align-items-center">
             <h5 class="mb-0" id="currentSectionTitle">仪表盘</h5>
             <div class="d-flex gap-2">
@@ -1369,9 +1445,83 @@
         document.getElementById('saveRawConfigBtn').addEventListener('click', saveRawConfig);
         document.getElementById('restartServiceBtn').addEventListener('click', restartService);
 
+        let autoRefreshInterval = null;
+        let autoRefreshEnabled = true;
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                if (data.success) {
+                    const status = data.status;
+                    const statusDot = document.getElementById('statusDot');
+                    const statusText = document.getElementById('statusText');
+                    
+                    if (status.running) {
+                        statusDot.classList.add('running');
+                        statusText.textContent = '运行中';
+                        
+                        document.getElementById('statusPid').style.display = 'inline-flex';
+                        document.getElementById('pidValue').textContent = status.pid;
+                        
+                        document.getElementById('statusCpu').style.display = 'inline-flex';
+                        document.getElementById('cpuValue').textContent = status.cpu;
+                        
+                        document.getElementById('statusMemory').style.display = 'inline-flex';
+                        document.getElementById('memoryValue').textContent = status.memory;
+                        
+                        document.getElementById('statusPorts').style.display = 'inline-flex';
+                        document.getElementById('portsValue').textContent = status.ports.length > 0 ? status.ports.join(', ') : '-';
+                        
+                        document.getElementById('statusUptime').style.display = 'inline-flex';
+                        document.getElementById('uptimeValue').textContent = status.uptime || '-';
+                    } else {
+                        statusDot.classList.remove('running');
+                        statusText.textContent = '未运行';
+                        
+                        document.getElementById('statusPid').style.display = 'none';
+                        document.getElementById('statusCpu').style.display = 'none';
+                        document.getElementById('statusMemory').style.display = 'none';
+                        document.getElementById('statusPorts').style.display = 'none';
+                        document.getElementById('statusUptime').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('获取状态失败:', error);
+                document.getElementById('statusDot').classList.remove('running');
+                document.getElementById('statusText').textContent = '获取失败';
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) return;
+            autoRefreshInterval = setInterval(updateStatus, 3000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
+        document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
         document.addEventListener('DOMContentLoaded', () => {
             loadConfig();
             loadRawConfig();
+            updateStatus();
+            startAutoRefresh();
         });
     </script>
 </body>

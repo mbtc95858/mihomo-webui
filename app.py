@@ -252,6 +252,79 @@ def update_rules():
         })
 
 
+@app.route('/api/status', methods=['GET'])
+def get_status():
+    try:
+        status = {
+            'running': False,
+            'pid': None,
+            'cpu': None,
+            'memory': None,
+            'uptime': None,
+            'command': None,
+            'ports': []
+        }
+        
+        # 获取进程信息
+        ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
+        for line in ps_result.stdout.split('\n'):
+            if 'mihomo' in line and 'grep' not in line:
+                parts = line.split()
+                if len(parts) > 10:
+                    status['running'] = True
+                    status['pid'] = parts[1]
+                    status['cpu'] = parts[2]
+                    status['memory'] = parts[3]
+                    status['command'] = ' '.join(parts[10:])
+                    
+                    # 获取进程启动时间
+                    try:
+                        stat_result = subprocess.run(['ps', '-p', parts[1], '-o', 'lstart='], 
+                                                   capture_output=True, text=True)
+                        if stat_result.returncode == 0:
+                            status['uptime'] = stat_result.stdout.strip()
+                    except:
+                        pass
+        
+        # 获取监听端口
+        if status['pid']:
+            try:
+                netstat_result = subprocess.run(['netstat', '-tlnp'], capture_output=True, text=True)
+                for line in netstat_result.stdout.split('\n'):
+                    if status['pid'] in line:
+                        parts = line.split()
+                        if len(parts) > 3:
+                            local_addr = parts[3]
+                            if ':' in local_addr:
+                                port = local_addr.split(':')[-1]
+                                if port not in status['ports']:
+                                    status['ports'].append(port)
+            except:
+                try:
+                    ss_result = subprocess.run(['ss', '-tlnp'], capture_output=True, text=True)
+                    for line in ss_result.stdout.split('\n'):
+                        if status['pid'] in line:
+                            parts = line.split()
+                            if len(parts) > 4:
+                                local_addr = parts[4]
+                                if ':' in local_addr:
+                                    port = local_addr.split(':')[-1]
+                                    if port not in status['ports']:
+                                        status['ports'].append(port)
+                except:
+                    pass
+        
+        return jsonify({
+            'success': True,
+            'status': status
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
 @app.route('/api/restart', methods=['POST'])
 def restart():
     success, message = restart_mihomo()
