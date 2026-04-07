@@ -5,6 +5,7 @@ import subprocess
 import shutil
 import time
 import shlex
+import requests
 
 app = Flask(__name__)
 
@@ -359,6 +360,48 @@ def get_logs():
             'success': True,
             'logs': [line for line in logs if line.strip()],
             'source': 'systemd' if len(logs) > 0 and 'journalctl' in str(subprocess.run('which journalctl', shell=True, capture_output=True, text=True).stdout) else 'file'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/traffic', methods=['GET'])
+def get_traffic():
+    try:
+        # 从 mihomo API 获取流量和连接信息
+        controller_url = 'http://127.0.0.1:9090'
+        secret = '123456'
+        
+        headers = {'Authorization': f'Bearer {secret}'} if secret else {}
+        
+        result = {
+            'traffic': {'up': 0, 'down': 0},
+            'connections': []
+        }
+        
+        # 获取流量统计
+        try:
+            traffic_response = requests.get(f'{controller_url}/traffic', headers=headers, timeout=2)
+            if traffic_response.status_code == 200:
+                result['traffic'] = traffic_response.json()
+        except:
+            pass
+        
+        # 获取连接列表
+        try:
+            connections_response = requests.get(f'{controller_url}/connections', headers=headers, timeout=2)
+            if connections_response.status_code == 200:
+                data = connections_response.json()
+                result['connections'] = data.get('connections', [])
+        except:
+            pass
+        
+        return jsonify({
+            'success': True,
+            'data': result
         })
     except Exception as e:
         return jsonify({

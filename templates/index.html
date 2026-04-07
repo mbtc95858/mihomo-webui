@@ -75,6 +75,12 @@
             margin-right: 10px;
             font-size: 1rem;
         }
+        .text-purple {
+            color: #8b5cf6;
+        }
+        .text-green {
+            color: #10b981;
+        }
         .main-content {
             margin-left: var(--sidebar-width);
             min-height: 100vh;
@@ -341,6 +347,9 @@
             </div>
             <a class="sidebar-link" data-section="status">
                 <i class="bi bi-display"></i><span>状态监控</span>
+            </a>
+            <a class="sidebar-link" data-section="traffic">
+                <i class="bi bi-speedometer2"></i><span>流量监控</span>
             </a>
             <a class="sidebar-link" data-section="logs">
                 <i class="bi bi-journal-text"></i><span>日志查看</span>
@@ -932,6 +941,88 @@
                 </div>
             </div>
 
+            <div class="content-section" id="section-traffic">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-up-circle" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">上行速率</h6>
+                                <h3 class="fw-bold mt-2" id="upSpeed">0 B/s</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-down-circle" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">下行速率</h6>
+                                <h3 class="fw-bold mt-2" id="downSpeed">0 B/s</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">当前连接</h6>
+                                <h3 class="fw-bold mt-2" id="connectionCount">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-collection" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">活跃代理</h6>
+                                <h3 class="fw-bold mt-2" id="activeProxies">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-ethernet me-2"></i>连接列表</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control" style="width: 200px;" id="connectionSearch" placeholder="搜索...">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="trafficAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="trafficAutoRefreshToggle">自动刷新</label>
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshTrafficBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="sticky-top bg-light" style="z-index: 10;">
+                                    <tr>
+                                        <th style="min-width: 80px;">协议</th>
+                                        <th style="min-width: 120px;">源地址</th>
+                                        <th style="min-width: 150px;">目标地址</th>
+                                        <th style="min-width: 100px;">策略/代理</th>
+                                        <th style="min-width: 100px;">上行</th>
+                                        <th style="min-width: 100px;">下行</th>
+                                        <th style="min-width: 100px;">链</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="connectionsTable">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                                            <p class="mt-2 mb-0">加载连接中...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-section" id="section-logs">
                 <div class="card">
                     <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
@@ -1237,6 +1328,7 @@
                 'proxy-groups': '代理组',
                 'rules': '规则',
                 'status': '状态监控',
+                'traffic': '流量监控',
                 'logs': '日志查看',
                 'topology': '拓扑图',
                 'raw-editor': '原始编辑器'
@@ -1968,6 +2060,141 @@
             refreshTopologyBtn.addEventListener('click', renderTopology);
         }
         
+        // 流量监控功能
+        let trafficAutoRefreshEnabled = true;
+        let trafficRefreshInterval = null;
+        let currentConnections = [];
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        async function loadTraffic() {
+            try {
+                const response = await fetch('/api/traffic');
+                const data = await response.json();
+                if (data.success) {
+                    const { traffic, connections } = data.data;
+                    currentConnections = connections;
+                    
+                    // 更新流量统计
+                    document.getElementById('upSpeed').textContent = formatBytes(traffic.up || 0) + '/s';
+                    document.getElementById('downSpeed').textContent = formatBytes(traffic.down || 0) + '/s';
+                    document.getElementById('connectionCount').textContent = connections.length;
+                    
+                    // 统计活跃代理
+                    const activeProxies = new Set();
+                    connections.forEach(conn => {
+                        if (conn.chains && conn.chains.length > 0) {
+                            conn.chains.forEach(proxy => activeProxies.add(proxy));
+                        }
+                    });
+                    document.getElementById('activeProxies').textContent = activeProxies.size;
+                    
+                    // 更新连接列表
+                    renderConnections();
+                }
+            } catch (error) {
+                console.error('加载流量失败:', error);
+            }
+        }
+        
+        function renderConnections() {
+            const tableBody = document.getElementById('connectionsTable');
+            const searchTerm = (document.getElementById('connectionSearch')?.value || '').toLowerCase();
+            
+            let connections = currentConnections;
+            if (searchTerm) {
+                connections = connections.filter(conn => {
+                    return (conn.metadata?.host || '').toLowerCase().includes(searchTerm) ||
+                           (conn.metadata?.sourceIP || '').toLowerCase().includes(searchTerm) ||
+                           (conn.chains || []).join(' ').toLowerCase().includes(searchTerm);
+                });
+            }
+            
+            if (connections.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">${searchTerm ? '未找到匹配的连接' : '暂无连接'}</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tableBody.innerHTML = connections.map(conn => {
+                const metadata = conn.metadata || {};
+                const chains = conn.chains || [];
+                const upload = conn.upload || 0;
+                const download = conn.download || 0;
+                
+                return `
+                    <tr>
+                        <td><span class="badge bg-primary">${metadata.network || '-'}</span></td>
+                        <td><code class="text-muted">${metadata.sourceIP || '-'}:${metadata.sourcePort || '-'}</code></td>
+                        <td>
+                            <div class="fw-semibold">${escapeHtml(metadata.host || metadata.destinationIP || '-')}</div>
+                            <small class="text-muted">${metadata.destinationPort || '-'}</small>
+                        </td>
+                        <td>
+                            ${chains.length > 0 ? 
+                                `<span class="badge bg-success">${escapeHtml(chains[chains.length - 1])}</span>` : 
+                                '<span class="text-muted">-</span>'
+                            }
+                        </td>
+                        <td><span class="text-purple fw-semibold">${formatBytes(upload)}</span></td>
+                        <td><span class="text-green fw-semibold">${formatBytes(download)}</span></td>
+                        <td>
+                            ${chains.map((c, i) => 
+                                `<span class="badge bg-light text-dark border" style="font-size: 0.7rem;">${escapeHtml(c)}</span>`
+                            ).join(' → ')}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function startTrafficAutoRefresh() {
+            if (trafficRefreshInterval) return;
+            trafficRefreshInterval = setInterval(loadTraffic, 2000);
+        }
+        
+        function stopTrafficAutoRefresh() {
+            if (trafficRefreshInterval) {
+                clearInterval(trafficRefreshInterval);
+                trafficRefreshInterval = null;
+            }
+        }
+        
+        const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
+        const trafficAutoRefreshToggle = document.getElementById('trafficAutoRefreshToggle');
+        const connectionSearch = document.getElementById('connectionSearch');
+        
+        if (refreshTrafficBtn) {
+            refreshTrafficBtn.addEventListener('click', loadTraffic);
+        }
+        
+        if (trafficAutoRefreshToggle) {
+            trafficAutoRefreshToggle.addEventListener('change', (e) => {
+                trafficAutoRefreshEnabled = e.target.checked;
+                if (trafficAutoRefreshEnabled) {
+                    startTrafficAutoRefresh();
+                } else {
+                    stopTrafficAutoRefresh();
+                }
+            });
+        }
+        
+        if (connectionSearch) {
+            connectionSearch.addEventListener('input', renderConnections);
+        }
+        
         // 详细状态页面的按钮
         const detailRefreshBtn = document.getElementById('detailRefreshBtn');
         const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
@@ -1992,6 +2219,8 @@
             loadLogs();
             startLogsAutoRefresh();
             renderTopology();
+            loadTraffic();
+            startTrafficAutoRefresh();
         });
     </script>
 </body>
