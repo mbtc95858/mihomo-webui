@@ -52,13 +52,14 @@
         .sidebar-link {
             display: flex;
             align-items: center;
-            padding: 0.875rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             color: rgba(255,255,255,0.7);
             text-decoration: none;
             transition: all 0.2s ease;
             cursor: pointer;
-            margin: 0.25rem 0.75rem;
+            margin: 0.15rem 0.75rem;
             border-radius: 0.5rem;
+            font-size: 0.9rem;
         }
         .sidebar-link:hover {
             color: white;
@@ -70,9 +71,9 @@
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
         .sidebar-link i {
-            width: 24px;
-            margin-right: 12px;
-            font-size: 1.1rem;
+            width: 20px;
+            margin-right: 10px;
+            font-size: 1rem;
         }
         .main-content {
             margin-left: var(--sidebar-width);
@@ -120,6 +121,7 @@
         }
         .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
         .stat-card.info { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
         .stat-card .icon {
             position: absolute;
             right: 1.5rem;
@@ -220,6 +222,44 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+        .config-form .row {
+            margin-bottom: 1rem;
+        }
+        .config-form label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .config-form .form-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .form-switch {
+            padding-left: 2.5rem;
+        }
+        .form-switch .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+            margin-left: -2.5rem;
+        }
+        .nav-pills .nav-link {
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .nav-pills .nav-link.active {
+            background: var(--primary);
+        }
+        .config-category {
+            margin-bottom: 2rem;
+        }
+        .config-category h6 {
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -233,12 +273,36 @@
             <a class="sidebar-link active" data-section="dashboard">
                 <i class="bi bi-speedometer2"></i><span>仪表盘</span>
             </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">配置管理</small>
+            </div>
+            <a class="sidebar-link" data-section="basic">
+                <i class="bi bi-gear"></i><span>基本设置</span>
+            </a>
+            <a class="sidebar-link" data-section="controller">
+                <i class="bi bi-plug"></i><span>外部控制</span>
+            </a>
+            <a class="sidebar-link" data-section="tun">
+                <i class="bi bi-hdd-network"></i><span>TUN 设置</span>
+            </a>
+            <a class="sidebar-link" data-section="dns">
+                <i class="bi bi-globe"></i><span>DNS 设置</span>
+            </a>
+            <a class="sidebar-link" data-section="sniffer">
+                <i class="bi bi-search"></i><span>嗅探设置</span>
+            </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">策略规则</small>
+            </div>
             <a class="sidebar-link" data-section="proxy-groups">
                 <i class="bi bi-diagram-3"></i><span>代理组</span>
             </a>
             <a class="sidebar-link" data-section="rules">
                 <i class="bi bi-list-check"></i><span>规则</span>
             </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">其他</small>
+            </div>
             <a class="sidebar-link" data-section="raw-editor">
                 <i class="bi bi-code-slash"></i><span>原始编辑器</span>
             </a>
@@ -266,24 +330,31 @@
         <div class="p-4">
             <div class="content-section active" id="section-dashboard">
                 <div class="row g-4 mb-4">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="stat-card">
+                            <div class="icon"><i class="bi bi-gear"></i></div>
+                            <div class="mb-1 opacity-75">配置项</div>
+                            <h2 class="mb-0" id="configCount">-</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card success">
                             <div class="icon"><i class="bi bi-diagram-3"></i></div>
                             <div class="mb-1 opacity-75">代理组</div>
                             <h2 class="mb-0" id="proxyGroupCount">-</h2>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="stat-card success">
+                    <div class="col-md-3">
+                        <div class="stat-card info">
                             <div class="icon"><i class="bi bi-list-check"></i></div>
                             <div class="mb-1 opacity-75">规则</div>
                             <h2 class="mb-0" id="ruleCount">-</h2>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="stat-card info">
+                    <div class="col-md-3">
+                        <div class="stat-card warning">
                             <div class="icon"><i class="bi bi-box"></i></div>
-                            <div class="mb-1 opacity-75">规则提供程序</div>
+                            <div class="mb-1 opacity-75">规则提供</div>
                             <h2 class="mb-0" id="ruleProviderCount">-</h2>
                         </div>
                     </div>
@@ -296,21 +367,21 @@
                     <div class="card-body">
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <button class="btn btn-outline-primary w-100 quick-action-btn" id="goToProxyGroupsBtn">
+                                <button class="btn btn-outline-primary w-100 quick-action-btn" data-goto="basic">
+                                    <i class="bi bi-gear fs-4 d-block mb-2"></i>
+                                    基本设置
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-success w-100 quick-action-btn" data-goto="proxy-groups">
                                     <i class="bi bi-diagram-3 fs-4 d-block mb-2"></i>
                                     管理代理组
                                 </button>
                             </div>
                             <div class="col-md-3">
-                                <button class="btn btn-outline-success w-100 quick-action-btn" id="goToRulesBtn">
+                                <button class="btn btn-outline-info w-100 quick-action-btn" data-goto="rules">
                                     <i class="bi bi-list-check fs-4 d-block mb-2"></i>
                                     管理规则
-                                </button>
-                            </div>
-                            <div class="col-md-3">
-                                <button class="btn btn-outline-info w-100 quick-action-btn" id="goToEditorBtn">
-                                    <i class="bi bi-code-slash fs-4 d-block mb-2"></i>
-                                    原始编辑
                                 </button>
                             </div>
                             <div class="col-md-3">
@@ -318,6 +389,306 @@
                                     <i class="bi bi-arrow-repeat fs-4 d-block mb-2"></i>
                                     重启服务
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-basic">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">基本设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>端口设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">混合端口 (mixed-port)</label>
+                                    <input type="number" class="form-control" id="config-mixed-port" placeholder="7890">
+                                    <div class="form-text">HTTP/HTTPS/SOCKS5 混合代理端口</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">重定向端口 (redir-port)</label>
+                                    <input type="number" class="form-control" id="config-redir-port" placeholder="7892">
+                                    <div class="form-text">Linux/macOS 的透明代理端口</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>网络设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-allow-lan">
+                                        <label class="form-check-label" for="config-allow-lan">允许局域网连接 (allow-lan)</label>
+                                    </div>
+                                    <div class="form-text">允许局域网内其他设备连接</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-ipv6">
+                                        <label class="form-check-label" for="config-ipv6">启用 IPv6</label>
+                                    </div>
+                                    <div class="form-text">开启 IPv6 支持</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>运行模式</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">规则模式 (mode)</label>
+                                    <select class="form-select" id="config-mode">
+                                        <option value="Rule">Rule - 规则模式</option>
+                                        <option value="Global">Global - 全局代理</option>
+                                        <option value="Direct">Direct - 全局直连</option>
+                                    </select>
+                                    <div class="form-text">选择流量处理模式</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">日志级别 (log-level)</label>
+                                    <select class="form-select" id="config-log-level">
+                                        <option value="silent">silent - 静默</option>
+                                        <option value="error">error - 错误</option>
+                                        <option value="warning">warning - 警告</option>
+                                        <option value="info">info - 信息</option>
+                                        <option value="debug">debug - 调试</option>
+                                    </select>
+                                    <div class="form-text">日志输出详细程度</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>Profile 设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-profile-store-selected">
+                                        <label class="form-check-label" for="config-profile-store-selected">保存选择 (store-selected)</label>
+                                    </div>
+                                    <div class="form-text">记住上次选择的节点和策略组</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-profile-store-fake-ip">
+                                        <label class="form-check-label" for="config-profile-store-fake-ip">保存 Fake-IP (store-fake-ip)</label>
+                                    </div>
+                                    <div class="form-text">保存 Fake-IP 映射以加快 DNS 命中</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-controller">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">外部控制设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>RESTful API</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">监听地址 (external-controller)</label>
+                                    <input type="text" class="form-control" id="config-external-controller" placeholder="0.0.0.0:9090">
+                                    <div class="form-text">Clash RESTful API 监听地址</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">API 口令 (secret)</label>
+                                    <input type="text" class="form-control" id="config-secret" placeholder="123456">
+                                    <div class="form-text">RESTful API 认证口令</div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">外部 UI 目录 (external-ui)</label>
+                                    <input type="text" class="form-control" id="config-external-ui" placeholder="dashboard">
+                                    <div class="form-text">静态网页资源目录（可选）</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-tun">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">TUN 设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-enable">
+                                        <label class="form-check-label" for="config-tun-enable">启用 TUN</label>
+                                    </div>
+                                    <div class="form-text">启用 TUN 虚拟网卡模式</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">网络栈 (stack)</label>
+                                    <select class="form-select" id="config-tun-stack">
+                                        <option value="system">system - 系统栈</option>
+                                        <option value="gvisor">gvisor - 用户态栈</option>
+                                        <option value="mixed">mixed - 混合</option>
+                                    </select>
+                                    <div class="form-text">选择 TUN 网络栈类型</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>高级设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">DNS 劫持 (dns-hijack)</label>
+                                    <input type="text" class="form-control" id="config-tun-dns-hijack" placeholder="0.0.0.0:53">
+                                    <div class="form-text">劫持 DNS 请求（多个用逗号分隔）</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-detect-interface">
+                                        <label class="form-check-label" for="config-tun-auto-detect-interface">自动识别接口</label>
+                                    </div>
+                                    <div class="form-text">自动识别默认出口网络接口</div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-route">
+                                        <label class="form-check-label" for="config-tun-auto-route">自动路由</label>
+                                    </div>
+                                    <div class="form-text">自动添加系统路由表</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-redirect">
+                                        <label class="form-check-label" for="config-tun-auto-redirect">自动重定向</label>
+                                    </div>
+                                    <div class="form-text">自动将流量重定向至 TUN</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-strict-route">
+                                        <label class="form-check-label" for="config-tun-strict-route">严格路由</label>
+                                    </div>
+                                    <div class="form-text">启用严格路由模式</div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-endpoint-independent-nat">
+                                        <label class="form-check-label" for="config-tun-endpoint-independent-nat">端点无关 NAT</label>
+                                    </div>
+                                    <div class="form-text">提高 NAT 类型兼容性，适用于 P2P 和游戏</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-dns">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">DNS 设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-enable">
+                                        <label class="form-check-label" for="config-dns-enable">启用 DNS</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-ipv6">
+                                        <label class="form-check-label" for="config-dns-ipv6">IPv6 DNS</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-use-system-hosts">
+                                        <label class="form-check-label" for="config-dns-use-system-hosts">使用系统 Hosts</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>高级设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">监听地址 (listen)</label>
+                                    <input type="text" class="form-control" id="config-dns-listen" placeholder="0.0.0.0:53">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">增强模式 (enhanced-mode)</label>
+                                    <select class="form-select" id="config-dns-enhanced-mode">
+                                        <option value="fake-ip">fake-ip</option>
+                                        <option value="redir-host">redir-host</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Fake-IP 范围 (fake-ip-range)</label>
+                                    <input type="text" class="form-control" id="config-dns-fake-ip-range" placeholder="198.18.0.1/16">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-sniffer">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">嗅探设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-enable">
+                                        <label class="form-check-label" for="config-sniffer-enable">启用嗅探</label>
+                                    </div>
+                                    <div class="form-text">提升分流准确性</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-override-destination">
+                                        <label class="form-check-label" for="config-sniffer-override-destination">覆盖目标地址</label>
+                                    </div>
+                                    <div class="form-text">使用嗅探到的域名覆盖原始目标地址</div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-parse-pure-ip">
+                                        <label class="form-check-label" for="config-sniffer-parse-pure-ip">解析纯 IP</label>
+                                    </div>
+                                    <div class="form-text">尝试反向解析获得域名</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-force-dns-mapping">
+                                        <label class="form-check-label" for="config-sniffer-force-dns-mapping">强制 DNS 映射</label>
+                                    </div>
+                                    <div class="form-text">对纯 IP 连接尝试 DNS 映射</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -479,6 +850,105 @@
         const proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
         const ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
 
+        const configFields = [
+            { id: 'mixed-port', type: 'number', path: ['mixed-port'] },
+            { id: 'redir-port', type: 'number', path: ['redir-port'] },
+            { id: 'allow-lan', type: 'checkbox', path: ['allow-lan'] },
+            { id: 'ipv6', type: 'checkbox', path: ['ipv6'] },
+            { id: 'mode', type: 'select', path: ['mode'] },
+            { id: 'log-level', type: 'select', path: ['log-level'] },
+            { id: 'external-controller', type: 'text', path: ['external-controller'] },
+            { id: 'secret', type: 'text', path: ['secret'] },
+            { id: 'external-ui', type: 'text', path: ['external-ui'] },
+            { id: 'profile-store-selected', type: 'checkbox', path: ['profile', 'store-selected'] },
+            { id: 'profile-store-fake-ip', type: 'checkbox', path: ['profile', 'store-fake-ip'] },
+            { id: 'tun-enable', type: 'checkbox', path: ['tun', 'enable'] },
+            { id: 'tun-stack', type: 'select', path: ['tun', 'stack'] },
+            { id: 'tun-dns-hijack', type: 'text', path: ['tun', 'dns-hijack'] },
+            { id: 'tun-auto-detect-interface', type: 'checkbox', path: ['tun', 'auto-detect-interface'] },
+            { id: 'tun-auto-route', type: 'checkbox', path: ['tun', 'auto-route'] },
+            { id: 'tun-auto-redirect', type: 'checkbox', path: ['tun', 'auto-redirect'] },
+            { id: 'tun-strict-route', type: 'checkbox', path: ['tun', 'strict-route'] },
+            { id: 'tun-endpoint-independent-nat', type: 'checkbox', path: ['tun', 'endpoint-independent-nat'] },
+            { id: 'dns-enable', type: 'checkbox', path: ['dns', 'enable'] },
+            { id: 'dns-ipv6', type: 'checkbox', path: ['dns', 'ipv6'] },
+            { id: 'dns-use-system-hosts', type: 'checkbox', path: ['dns', 'use-system-hosts'] },
+            { id: 'dns-listen', type: 'text', path: ['dns', 'listen'] },
+            { id: 'dns-enhanced-mode', type: 'select', path: ['dns', 'enhanced-mode'] },
+            { id: 'dns-fake-ip-range', type: 'text', path: ['dns', 'fake-ip-range'] },
+            { id: 'sniffer-enable', type: 'checkbox', path: ['sniffer', 'enable'] },
+            { id: 'sniffer-override-destination', type: 'checkbox', path: ['sniffer', 'override-destination'] },
+            { id: 'sniffer-parse-pure-ip', type: 'checkbox', path: ['sniffer', 'parse-pure-ip'] },
+            { id: 'sniffer-force-dns-mapping', type: 'checkbox', path: ['sniffer', 'force-dns-mapping'] },
+        ];
+
+        function getNestedValue(obj, path) {
+            let current = obj;
+            for (const key of path) {
+                if (current === undefined || current === null) return undefined;
+                current = current[key];
+            }
+            return current;
+        }
+
+        function setNestedValue(obj, path, value) {
+            let current = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i];
+                if (current[key] === undefined || current[key] === null) {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[path[path.length - 1]] = value;
+        }
+
+        function loadConfigToForm() {
+            for (const field of configFields) {
+                const value = getNestedValue(config, field.path);
+                const el = document.getElementById('config-' + field.id);
+                if (!el) continue;
+                
+                if (field.type === 'checkbox') {
+                    el.checked = value === true;
+                } else if (field.type === 'text' || field.type === 'number') {
+                    if (Array.isArray(value)) {
+                        el.value = value.join(', ');
+                    } else {
+                        el.value = value !== undefined && value !== null ? value : '';
+                    }
+                } else if (field.type === 'select') {
+                    el.value = value !== undefined && value !== null ? value : '';
+                }
+            }
+        }
+
+        function saveConfigFromForm() {
+            for (const field of configFields) {
+                const el = document.getElementById('config-' + field.id);
+                if (!el) continue;
+                
+                let value;
+                if (field.type === 'checkbox') {
+                    value = el.checked;
+                } else if (field.type === 'number') {
+                    value = el.value ? Number(el.value) : undefined;
+                } else if (field.type === 'text') {
+                    if (field.id === 'tun-dns-hijack' && el.value) {
+                        value = el.value.split(',').map(s => s.trim());
+                    } else {
+                        value = el.value || undefined;
+                    }
+                } else {
+                    value = el.value || undefined;
+                }
+                
+                if (value !== undefined) {
+                    setNestedValue(config, field.path, value);
+                }
+            }
+        }
+
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer');
             const toastId = 'toast-' + Date.now();
@@ -511,6 +981,11 @@
             
             const titles = {
                 'dashboard': '仪表盘',
+                'basic': '基本设置',
+                'controller': '外部控制',
+                'tun': 'TUN 设置',
+                'dns': 'DNS 设置',
+                'sniffer': '嗅探设置',
                 'proxy-groups': '代理组',
                 'rules': '规则',
                 'raw-editor': '原始编辑器'
@@ -524,9 +999,12 @@
             });
         });
 
-        document.getElementById('goToProxyGroupsBtn').addEventListener('click', () => switchSection('proxy-groups'));
-        document.getElementById('goToRulesBtn').addEventListener('click', () => switchSection('rules'));
-        document.getElementById('goToEditorBtn').addEventListener('click', () => switchSection('raw-editor'));
+        document.querySelectorAll('.quick-action-btn[data-goto]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchSection(btn.dataset.goto);
+            });
+        });
+
         document.getElementById('quickRestartBtn').addEventListener('click', restartService);
 
         async function loadConfig() {
@@ -536,6 +1014,7 @@
                 if (data.success) {
                     config = data.config;
                     updateDashboard();
+                    loadConfigToForm();
                     renderProxyGroups();
                     renderRules();
                 } else {
@@ -583,6 +1062,15 @@
         }
 
         function updateDashboard() {
+            let configCount = 0;
+            for (const key in config) {
+                if (typeof config[key] === 'object' && config[key] !== null && !Array.isArray(config[key])) {
+                    configCount += Object.keys(config[key]).length;
+                } else {
+                    configCount++;
+                }
+            }
+            document.getElementById('configCount').textContent = configCount;
             document.getElementById('proxyGroupCount').textContent = (config['proxy-groups'] || []).length;
             document.getElementById('ruleCount').textContent = (config['rules'] || []).length;
             document.getElementById('ruleProviderCount').textContent = Object.keys(config['rule-providers'] || {}).length;
@@ -744,14 +1232,14 @@
                 config['proxy-groups'].push(group);
             }
             
-            await saveConfig();
+            await saveAllConfig();
             proxyGroupModal.hide();
         });
 
         function deleteProxyGroup(index) {
             if (confirm('确定要删除这个代理组吗？')) {
                 config['proxy-groups'].splice(index, 1);
-                saveConfig();
+                saveAllConfig();
             }
         }
 
@@ -818,14 +1306,14 @@
                 config['rules'].push(rule);
             }
             
-            await saveConfig();
+            await saveAllConfig();
             ruleModal.hide();
         });
 
         function deleteRule(index) {
             if (confirm('确定要删除这个规则吗？')) {
                 config['rules'].splice(index, 1);
-                saveConfig();
+                saveAllConfig();
             }
         }
 
@@ -836,11 +1324,12 @@
             [config['rules'][index], config['rules'][newIndex]] = 
             [config['rules'][newIndex], config['rules'][index]];
             
-            saveConfig();
+            saveAllConfig();
         }
 
-        async function saveConfig() {
+        async function saveAllConfig() {
             try {
+                saveConfigFromForm();
                 const response = await fetch('/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -881,7 +1370,7 @@
             loadRawConfig();
         });
 
-        document.getElementById('saveAllBtn').addEventListener('click', saveConfig);
+        document.getElementById('saveAllBtn').addEventListener('click', saveAllConfig);
         document.getElementById('loadRawConfigBtn').addEventListener('click', loadRawConfig);
         document.getElementById('saveRawConfigBtn').addEventListener('click', saveRawConfig);
         document.getElementById('restartServiceBtn').addEventListener('click', restartService);
