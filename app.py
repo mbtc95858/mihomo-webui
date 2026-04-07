@@ -42,13 +42,7 @@ def save_config(config):
 
 def restart_mihomo():
     try:
-        # 方法1：尝试使用 systemctl（不需要 sudo，因为当前用户可能已经有权限）
-        result = subprocess.run(['systemctl', 'restart', 'mihomo'], 
-                              capture_output=True, text=True, timeout=10)
-        if result.returncode == 0:
-            return True, 'Mihomo 服务重启成功'
-        
-        # 方法2：如果不行，直接找到进程并重启
+        # 直接使用进程方式重启，不使用 systemctl 避免超时
         # 找到 mihomo 进程
         ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
         mihomo_pids = []
@@ -64,40 +58,39 @@ def restart_mihomo():
                         if idx != -1:
                             mihomo_cmd = line[idx:].strip()
         
-        if mihomo_pids:
-            # 杀掉进程
-            for pid in mihomo_pids:
-                subprocess.run(['kill', '-9', pid], capture_output=True)
-            
-            # 等待一下
-            time.sleep(1)
-            
-            # 重新启动 mihomo
-            mihomo_path = '/usr/local/bin/mihomo'
-            config_dir = '/home/admin/.config/mihomo'
-            if os.path.exists(mihomo_path) and os.path.exists(config_dir):
-                # 使用与原进程相同的参数启动
-                if mihomo_cmd:
-                    # 使用完整命令
-                    args = shlex.split(mihomo_cmd)
-                    subprocess.Popen(args,
-                                   stdout=subprocess.DEVNULL, 
-                                   stderr=subprocess.DEVNULL,
-                                   start_new_session=True)
-                else:
-                    # 使用默认参数
-                    subprocess.Popen([mihomo_path, '-d', config_dir], 
-                                   stdout=subprocess.DEVNULL, 
-                                   stderr=subprocess.DEVNULL,
-                                   start_new_session=True)
-                return True, 'Mihomo 服务重启成功'
-            else:
-                return False, '重启失败：找不到 mihomo 可执行文件或配置目录'
+        if not mihomo_pids:
+            return False, '重启失败：未找到 mihomo 进程'
         
-        return False, '重启失败：未找到 mihomo 进程'
+        # 杀掉进程
+        for pid in mihomo_pids:
+            subprocess.run(['kill', '-9', pid], capture_output=True)
         
-    except subprocess.TimeoutExpired:
-        return False, '重启失败：操作超时'
+        # 等待一下
+        time.sleep(1)
+        
+        # 重新启动 mihomo
+        mihomo_path = '/usr/local/bin/mihomo'
+        config_dir = '/home/admin/.config/mihomo'
+        if not os.path.exists(mihomo_path) or not os.path.exists(config_dir):
+            return False, '重启失败：找不到 mihomo 可执行文件或配置目录'
+        
+        # 使用与原进程相同的参数启动
+        if mihomo_cmd:
+            # 使用完整命令
+            args = shlex.split(mihomo_cmd)
+            subprocess.Popen(args,
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL,
+                           start_new_session=True)
+        else:
+            # 使用默认参数
+            subprocess.Popen([mihomo_path, '-d', config_dir], 
+                           stdout=subprocess.DEVNULL, 
+                           stderr=subprocess.DEVNULL,
+                           start_new_session=True)
+        
+        return True, 'Mihomo 服务重启成功'
+        
     except Exception as e:
         return False, f'重启失败: {str(e)}'
 
