@@ -802,6 +802,8 @@
                             </div>
                             <select class="form-select" style="width: auto;" id="ruleSortSelect">
                                 <option value="default">默认顺序</option>
+                                <option value="newest">最新添加在前</option>
+                                <option value="oldest">最早添加在前</option>
                                 <option value="type-asc">按类型 ↑</option>
                                 <option value="type-desc">按类型 ↓</option>
                                 <option value="policy-asc">按策略 ↑</option>
@@ -1335,6 +1337,12 @@
         function sortRules(rules, sortType) {
             const rulesCopy = [...rules];
             switch (sortType) {
+                case 'newest':
+                    // 最新添加在前（当前顺序）
+                    return [...rulesCopy];
+                case 'oldest':
+                    // 最早添加在前（反转顺序）
+                    return [...rulesCopy].reverse();
                 case 'type-asc':
                     return rulesCopy.sort((a, b) => {
                         const pa = parseRule(a);
@@ -1367,9 +1375,10 @@
 
         function renderRules() {
             const list = document.getElementById('rulesList');
-            let rules = currentRuleSort === 'default' 
-                ? (config['rules'] || []) 
-                : sortRules(config['rules'] || [], currentRuleSort);
+            let rules = (config['rules'] || []);
+            if (currentRuleSort !== 'default') {
+                rules = sortRules(rules, currentRuleSort);
+            }
             
             rules = rules.filter((rule, index) => {
                 if (!ruleSearchTerm) return true;
