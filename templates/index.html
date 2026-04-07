@@ -337,6 +337,12 @@
                 <i class="bi bi-list-check"></i><span>规则</span>
             </a>
             <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">系统监控</small>
+            </div>
+            <a class="sidebar-link" data-section="status">
+                <i class="bi bi-display"></i><span>状态监控</span>
+            </a>
+            <div class="px-3 py-2">
                 <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">其他</small>
             </div>
             <a class="sidebar-link" data-section="raw-editor">
@@ -805,6 +811,109 @@
                 </div>
             </div>
 
+            <div class="content-section" id="section-status">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-hurricane me-2"></i>进程状态</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="status-dot me-2" id="detailStatusDot"></span>
+                                    <h4 class="mb-0" id="detailStatusText">检查中...</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-cpu me-2"></i>PID</span>
+                                            <strong id="detailPid">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-activity me-2"></i>CPU</span>
+                                            <strong id="detailCpu">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-memory me-2"></i>内存</span>
+                                            <strong id="detailMemory">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-clock-history me-2"></i>启动时间</span>
+                                            <strong id="detailUptime">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <label class="form-label fw-semibold"><i class="bi bi-terminal me-2"></i>命令行</label>
+                                    <div class="p-3 bg-dark text-light rounded font-monospace small" id="detailCommand">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>网络信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="mb-3"><i class="bi bi-plug me-2"></i>监听端口</h6>
+                                <div class="d-flex flex-wrap gap-2 mb-4" id="detailPorts">
+                                    <span class="text-muted">暂无端口</span>
+                                </div>
+                                <h6 class="mb-3"><i class="bi bi-gear me-2"></i>配置信息</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-list-check me-2"></i>代理组</span>
+                                            <strong id="detailProxyGroups">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-list-ol me-2"></i>规则数</span>
+                                            <strong id="detailRules">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-box me-2"></i>规则提供程序</span>
+                                            <strong id="detailRuleProviders">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock me-2"></i>实时监控</h5>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="text-muted small">自动刷新:</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="detailAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="detailAutoRefreshToggle">3秒</label>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm" id="detailRefreshBtn">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center text-muted" id="monitoringPlaceholder">
+                            <i class="bi bi-graph-up" style="font-size: 3rem;"></i>
+                            <p class="mt-2">实时监控状态中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-section" id="section-raw-editor">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
@@ -1058,6 +1167,7 @@
                 'sniffer': '嗅探设置',
                 'proxy-groups': '代理组',
                 'rules': '规则',
+                'status': '状态监控',
                 'raw-editor': '原始编辑器'
             };
             document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
@@ -1454,10 +1564,17 @@
                 const data = await response.json();
                 if (data.success) {
                     const status = data.status;
+                    
+                    // 更新顶部状态栏
                     const statusDot = document.getElementById('statusDot');
                     const statusText = document.getElementById('statusText');
                     
+                    // 更新详细状态页面
+                    const detailStatusDot = document.getElementById('detailStatusDot');
+                    const detailStatusText = document.getElementById('detailStatusText');
+                    
                     if (status.running) {
+                        // 顶部状态栏
                         statusDot.classList.add('running');
                         statusText.textContent = '运行中';
                         
@@ -1475,7 +1592,38 @@
                         
                         document.getElementById('statusUptime').style.display = 'inline-flex';
                         document.getElementById('uptimeValue').textContent = status.uptime || '-';
+                        
+                        // 详细状态页面
+                        if (detailStatusDot) detailStatusDot.classList.add('running');
+                        if (detailStatusText) detailStatusText.textContent = '运行中';
+                        
+                        document.getElementById('detailPid').textContent = status.pid;
+                        document.getElementById('detailCpu').textContent = status.cpu + '%';
+                        document.getElementById('detailMemory').textContent = status.memory + '%';
+                        document.getElementById('detailUptime').textContent = status.uptime || '-';
+                        document.getElementById('detailCommand').textContent = status.command || '-';
+                        
+                        // 更新端口
+                        const detailPorts = document.getElementById('detailPorts');
+                        if (detailPorts) {
+                            if (status.ports.length > 0) {
+                                detailPorts.innerHTML = status.ports.map(port => 
+                                    `<span class="badge bg-primary">${port}</span>`
+                                ).join('');
+                            } else {
+                                detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
+                            }
+                        }
+                        
+                        // 更新配置信息
+                        document.getElementById('detailProxyGroups').textContent = 
+                            (config['proxy-groups'] || []).length + ' 个';
+                        document.getElementById('detailRules').textContent = 
+                            (config['rules'] || []).length + ' 个';
+                        document.getElementById('detailRuleProviders').textContent = 
+                            Object.keys(config['rule-providers'] || {}).length + ' 个';
                     } else {
+                        // 顶部状态栏
                         statusDot.classList.remove('running');
                         statusText.textContent = '未运行';
                         
@@ -1484,6 +1632,21 @@
                         document.getElementById('statusMemory').style.display = 'none';
                         document.getElementById('statusPorts').style.display = 'none';
                         document.getElementById('statusUptime').style.display = 'none';
+                        
+                        // 详细状态页面
+                        if (detailStatusDot) detailStatusDot.classList.remove('running');
+                        if (detailStatusText) detailStatusText.textContent = '未运行';
+                        
+                        document.getElementById('detailPid').textContent = '-';
+                        document.getElementById('detailCpu').textContent = '-';
+                        document.getElementById('detailMemory').textContent = '-';
+                        document.getElementById('detailUptime').textContent = '-';
+                        document.getElementById('detailCommand').textContent = '-';
+                        
+                        const detailPorts = document.getElementById('detailPorts');
+                        if (detailPorts) {
+                            detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
+                        }
                     }
                 }
             } catch (error) {
@@ -1495,6 +1658,11 @@
 
         function toggleAutoRefresh() {
             autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+            // 同步详细状态页面的开关
+            const detailToggle = document.getElementById('detailAutoRefreshToggle');
+            if (detailToggle) {
+                detailToggle.checked = autoRefreshEnabled;
+            }
             if (autoRefreshEnabled) {
                 startAutoRefresh();
             } else {
@@ -1516,6 +1684,22 @@
 
         document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
         document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+        
+        // 详细状态页面的按钮
+        const detailRefreshBtn = document.getElementById('detailRefreshBtn');
+        const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
+        
+        if (detailRefreshBtn) {
+            detailRefreshBtn.addEventListener('click', updateStatus);
+        }
+        
+        if (detailAutoRefreshToggle) {
+            detailAutoRefreshToggle.addEventListener('change', (e) => {
+                // 与顶部状态栏共享同一个自动刷新设置
+                document.getElementById('autoRefreshToggle').checked = e.target.checked;
+                toggleAutoRefresh();
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadConfig();
