@@ -1835,8 +1835,11 @@
 
         async function updateStatus() {
             try {
+                console.log('[updateStatus] 正在获取状态...');
                 const response = await fetch('/api/status');
                 const data = await response.json();
+                console.log('[updateStatus] 收到数据:', data);
+                
                 if (data.success) {
                     const status = data.status;
                     
