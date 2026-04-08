@@ -1941,7 +1941,7 @@
 
         function startAutoRefresh() {
             if (autoRefreshInterval) return;
-            autoRefreshInterval = setInterval(updateStatus, 10000);
+            autoRefreshInterval = setInterval(updateStatus, 10000);  // 统一10秒刷新
         }
 
         function stopAutoRefresh() {
@@ -2153,7 +2153,7 @@
         
         function startTrafficAutoRefresh() {
             if (trafficRefreshInterval) return;
-            trafficRefreshInterval = setInterval(loadTraffic, 8000);
+            trafficRefreshInterval = setInterval(loadTraffic, 10000);  // 统一10秒刷新
         }
         
         function stopTrafficAutoRefresh() {

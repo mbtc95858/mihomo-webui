@@ -12,13 +12,14 @@ app = Flask(__name__)
 CONFIG_PATH = '/home/admin/.config/mihomo/config.yaml'
 BACKUP_PATH = '/home/admin/.config/mihomo/config.yaml.backup'
 
-# 简单的缓存机制
+# 缓存机制（优化性能）
 cache = {
     'status': {'data': None, 'time': 0},
     'logs': {'data': None, 'time': 0},
-    'traffic': {'data': None, 'time': 0}
+    'traffic': {'data': None, 'time': 0},
+    'config': {'data': None, 'time': 0}  # 新增：配置缓存
 }
-CACHE_TTL = 2  # 缓存2秒
+CACHE_TTL = 10  # 缓存10秒，与前端刷新间隔匹配
 
 
 def load_config_raw():
@@ -43,6 +44,8 @@ def clear_cache():
     cache['logs']['time'] = 0
     cache['traffic']['data'] = None
     cache['traffic']['time'] = 0
+    cache['config']['data'] = None
+    cache['config']['time'] = 0
 
 
 def save_config_raw(content):
@@ -155,12 +158,21 @@ def update_config_raw():
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
+    # 检查缓存
+    current_time = time.time()
+    if cache['config']['data'] and (current_time - cache['config']['time']) < CACHE_TTL:
+        return jsonify(cache['config']['data'])
+    
     try:
         config = load_config()
-        return jsonify({
+        result = {
             'success': True,
             'config': config
-        })
+        }
+        # 保存到缓存
+        cache['config']['data'] = result
+        cache['config']['time'] = time.time()
+        return jsonify(result)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -583,4 +595,4 @@ def restart():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)  # 关闭debug模式避免自动重启导致ERR_ABORTED
