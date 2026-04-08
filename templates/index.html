@@ -1251,8 +1251,8 @@
         let ruleSearchTerm = '';
         let originalRules = [];
         let currentRuleSort = 'default';
-        const proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
-        const ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
+        let proxyGroupModal = null;
+        let ruleModal = null;
 
         const configFields = [
             { id: 'mixed-port', type: 'number', path: ['mixed-port'] },
@@ -1951,9 +1951,6 @@
             }
         }
 
-        document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
-        document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
-        
         // 日志功能
         let logsAutoRefreshEnabled = true;
         let logsRefreshInterval = null;
@@ -2004,36 +2001,6 @@
             }
         }
         
-        const logsAutoRefreshToggle = document.getElementById('logsAutoRefreshToggle');
-        const refreshLogsBtn = document.getElementById('refreshLogsBtn');
-        const clearLogsBtn = document.getElementById('clearLogsBtn');
-        
-        if (logsAutoRefreshToggle) {
-            logsAutoRefreshToggle.addEventListener('change', (e) => {
-                logsAutoRefreshEnabled = e.target.checked;
-                if (logsAutoRefreshEnabled) {
-                    startLogsAutoRefresh();
-                } else {
-                    stopLogsAutoRefresh();
-                }
-            });
-        }
-        
-        if (refreshLogsBtn) {
-            refreshLogsBtn.addEventListener('click', loadLogs);
-        }
-        
-        if (clearLogsBtn) {
-            clearLogsBtn.addEventListener('click', () => {
-                document.getElementById('logsContainer').innerHTML = `
-                    <div class="text-center text-muted py-5">
-                        <i class="bi bi-check-circle" style="font-size: 3rem; color: #22c55e;"></i>
-                        <p class="mt-2">已清空</p>
-                    </div>
-                `;
-            });
-        }
-        
         // 拓扑图功能
         function renderTopology() {
             const container = document.getElementById('topologyContainer');
@@ -2082,11 +2049,6 @@
             
             html += `</div>`;
             container.innerHTML = html;
-        }
-        
-        const refreshTopologyBtn = document.getElementById('refreshTopologyBtn');
-        if (refreshTopologyBtn) {
-            refreshTopologyBtn.addEventListener('click', renderTopology);
         }
         
         // 流量监控功能
@@ -2200,45 +2162,7 @@
                 trafficRefreshInterval = null;
             }
         }
-        
-        const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
-        const trafficAutoRefreshToggle = document.getElementById('trafficAutoRefreshToggle');
-        const connectionSearch = document.getElementById('connectionSearch');
-        
-        if (refreshTrafficBtn) {
-            refreshTrafficBtn.addEventListener('click', loadTraffic);
-        }
-        
-        if (trafficAutoRefreshToggle) {
-            trafficAutoRefreshToggle.addEventListener('change', (e) => {
-                trafficAutoRefreshEnabled = e.target.checked;
-                if (trafficAutoRefreshEnabled) {
-                    startTrafficAutoRefresh();
-                } else {
-                    stopTrafficAutoRefresh();
-                }
-            });
-        }
-        
-        if (connectionSearch) {
-            connectionSearch.addEventListener('input', renderConnections);
-        }
-        
-        // 详细状态页面的按钮
-        const detailRefreshBtn = document.getElementById('detailRefreshBtn');
-        const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
-        
-        if (detailRefreshBtn) {
-            detailRefreshBtn.addEventListener('click', updateStatus);
-        }
-        
-        if (detailAutoRefreshToggle) {
-            detailAutoRefreshToggle.addEventListener('change', (e) => {
-                // 与顶部状态栏共享同一个自动刷新设置
-                document.getElementById('autoRefreshToggle').checked = e.target.checked;
-                toggleAutoRefresh();
-            });
-        }
+
 
         // 代理组节点选择功能
         let proxyGroups = [];
@@ -2305,17 +2229,6 @@
                     </div>
                 </div>
             `).join('');
-            
-            // 绑定选择事件
-            document.querySelectorAll('.proxy-node-select').forEach(select => {
-                select.addEventListener('change', async (e) => {
-                    const groupName = e.target.dataset.group;
-                    const selectedProxy = e.target.value;
-                    if (selectedProxy) {
-                        await selectProxyNode(groupName, selectedProxy);
-                    }
-                });
-            });
         }
 
         async function selectProxyNode(groupName, proxyName) {
@@ -2514,6 +2427,10 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // 初始化 Modal
+            proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
+            ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
+
             loadConfig();
             loadRawConfig();
             updateStatus();
@@ -2692,6 +2609,102 @@
             const refreshProxyGroupsBtn = document.getElementById('refreshProxyGroupsBtn');
             if (refreshProxyGroupsBtn) {
                 refreshProxyGroupsBtn.addEventListener('click', loadProxyGroups);
+            }
+
+            // 状态刷新按钮和自动刷新
+            document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
+            document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+            // 日志功能
+            const logsAutoRefreshToggle = document.getElementById('logsAutoRefreshToggle');
+            const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+            const clearLogsBtn = document.getElementById('clearLogsBtn');
+            
+            if (logsAutoRefreshToggle) {
+                logsAutoRefreshToggle.addEventListener('change', (e) => {
+                    logsAutoRefreshEnabled = e.target.checked;
+                    if (logsAutoRefreshEnabled) {
+                        startLogsAutoRefresh();
+                    } else {
+                        stopLogsAutoRefresh();
+                    }
+                });
+            }
+            
+            if (refreshLogsBtn) {
+                refreshLogsBtn.addEventListener('click', loadLogs);
+            }
+            
+            if (clearLogsBtn) {
+                clearLogsBtn.addEventListener('click', () => {
+                    document.getElementById('logsContainer').innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-check-circle" style="font-size: 3rem; color: #22c55e;"></i>
+                            <p class="mt-2">已清空</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // 拓扑图刷新按钮
+            const refreshTopologyBtn = document.getElementById('refreshTopologyBtn');
+            if (refreshTopologyBtn) {
+                refreshTopologyBtn.addEventListener('click', renderTopology);
+            }
+
+            // 流量监控功能
+            const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
+            const trafficAutoRefreshToggle = document.getElementById('trafficAutoRefreshToggle');
+            const connectionSearch = document.getElementById('connectionSearch');
+            
+            if (refreshTrafficBtn) {
+                refreshTrafficBtn.addEventListener('click', loadTraffic);
+            }
+            
+            if (trafficAutoRefreshToggle) {
+                trafficAutoRefreshToggle.addEventListener('change', (e) => {
+                    trafficAutoRefreshEnabled = e.target.checked;
+                    if (trafficAutoRefreshEnabled) {
+                        startTrafficAutoRefresh();
+                    } else {
+                        stopTrafficAutoRefresh();
+                    }
+                });
+            }
+            
+            if (connectionSearch) {
+                connectionSearch.addEventListener('input', renderConnections);
+            }
+
+            // 详细状态页面的按钮
+            const detailRefreshBtn = document.getElementById('detailRefreshBtn');
+            const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
+            
+            if (detailRefreshBtn) {
+                detailRefreshBtn.addEventListener('click', updateStatus);
+            }
+            
+            if (detailAutoRefreshToggle) {
+                detailAutoRefreshToggle.addEventListener('change', (e) => {
+                    // 与顶部状态栏共享同一个自动刷新设置
+                    document.getElementById('autoRefreshToggle').checked = e.target.checked;
+                    toggleAutoRefresh();
+                });
+            }
+
+            // 代理组节点选择 - 使用事件委托避免内存泄漏
+            const proxyNodesList = document.getElementById('proxyNodesList');
+            if (proxyNodesList) {
+                proxyNodesList.addEventListener('change', async (e) => {
+                    const select = e.target.closest('.proxy-node-select');
+                    if (select) {
+                        const groupName = select.dataset.group;
+                        const selectedProxy = select.value;
+                        if (selectedProxy) {
+                            await selectProxyNode(groupName, selectedProxy);
+                        }
+                    }
+                });
             }
         });
     </script>

@@ -35,11 +35,22 @@ def load_config():
     return {}
 
 
+def clear_cache():
+    """清除所有缓存"""
+    cache['status']['data'] = None
+    cache['status']['time'] = 0
+    cache['logs']['data'] = None
+    cache['logs']['time'] = 0
+    cache['traffic']['data'] = None
+    cache['traffic']['time'] = 0
+
+
 def save_config_raw(content):
     if os.path.exists(CONFIG_PATH):
         shutil.copy2(CONFIG_PATH, BACKUP_PATH)
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         f.write(content)
+    clear_cache()
 
 
 def save_config(config):
@@ -47,6 +58,7 @@ def save_config(config):
         shutil.copy2(CONFIG_PATH, BACKUP_PATH)
     with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
         yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    clear_cache()
 
 
 def restart_mihomo():
@@ -285,7 +297,7 @@ def get_status():
         }
         
         # 获取进程信息
-        ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
+        ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)
         for line in ps_result.stdout.split('\n'):
             if 'mihomo' in line and 'grep' not in line:
                 parts = line.split()
@@ -299,16 +311,16 @@ def get_status():
                     # 获取进程启动时间
                     try:
                         stat_result = subprocess.run(['ps', '-p', parts[1], '-o', 'lstart='], 
-                                                   capture_output=True, text=True)
+                                                   capture_output=True, text=True, timeout=2)
                         if stat_result.returncode == 0:
                             status['uptime'] = stat_result.stdout.strip()
-                    except:
+                    except Exception as e:
                         pass
         
         # 获取监听端口
         if status['pid']:
             try:
-                netstat_result = subprocess.run(['netstat', '-tlnp'], capture_output=True, text=True)
+                netstat_result = subprocess.run(['netstat', '-tlnp'], capture_output=True, text=True, timeout=5)
                 for line in netstat_result.stdout.split('\n'):
                     if status['pid'] in line:
                         parts = line.split()
@@ -318,9 +330,9 @@ def get_status():
                                 port = local_addr.split(':')[-1]
                                 if port not in status['ports']:
                                     status['ports'].append(port)
-            except:
+            except Exception as e:
                 try:
-                    ss_result = subprocess.run(['ss', '-tlnp'], capture_output=True, text=True)
+                    ss_result = subprocess.run(['ss', '-tlnp'], capture_output=True, text=True, timeout=5)
                     for line in ss_result.stdout.split('\n'):
                         if status['pid'] in line:
                             parts = line.split()
@@ -330,7 +342,7 @@ def get_status():
                                     port = local_addr.split(':')[-1]
                                     if port not in status['ports']:
                                         status['ports'].append(port)
-                except:
+                except Exception as e:
                     pass
         
         # 从 Mihomo API 获取额外信息
@@ -344,7 +356,7 @@ def get_status():
                 version_response = requests.get(f'{controller_url}/version', headers=headers, timeout=2)
                 if version_response.status_code == 200:
                     status['version'] = version_response.json().get('version')
-            except:
+            except Exception as e:
                 pass
             
             # 获取运行配置
@@ -357,9 +369,9 @@ def get_status():
                     status['allow_lan'] = config_data.get('allow-lan', False)
                     tun_config = config_data.get('tun', {})
                     status['tun_enabled'] = tun_config.get('enable', False) if isinstance(tun_config, dict) else False
-            except:
+            except Exception as e:
                 pass
-        except:
+        except Exception as e:
             pass
         
         result = {
@@ -388,12 +400,14 @@ def get_logs():
         # 获取 mihomo 日志
         # 尝试从 systemd journal 获取
         logs = []
+        source = 'file'
         try:
             result = subprocess.run(['journalctl', '-u', 'mihomo', '-n', '100', '--no-pager'], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 logs = result.stdout.split('\n')
-        except:
+                source = 'systemd'
+        except Exception as e:
             pass
         
         # 如果 systemd 没有，尝试从 mihomo 的日志目录获取
@@ -408,14 +422,15 @@ def get_logs():
                                 # 取最后 100 行
                                 lines = f.read().split('\n')
                                 logs = lines[-100:]
+                                source = 'file'
                                 break
-                        except:
+                        except Exception as e:
                             pass
         
         result = {
             'success': True,
             'logs': [line for line in logs if line.strip()],
-            'source': 'systemd' if len(logs) > 0 and 'journalctl' in str(subprocess.run('which journalctl', shell=True, capture_output=True, text=True).stdout) else 'file'
+            'source': source
         }
         # 保存到缓存
         cache['logs']['data'] = result
@@ -452,7 +467,7 @@ def get_traffic():
             traffic_response = requests.get(f'{controller_url}/traffic', headers=headers, timeout=2)
             if traffic_response.status_code == 200:
                 result['traffic'] = traffic_response.json()
-        except:
+        except Exception as e:
             pass
         
         # 获取连接列表
@@ -461,7 +476,7 @@ def get_traffic():
             if connections_response.status_code == 200:
                 data = connections_response.json()
                 result['connections'] = data.get('connections', [])
-        except:
+        except Exception as e:
             pass
         
         response_data = {
