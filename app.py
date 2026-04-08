@@ -12,6 +12,14 @@ app = Flask(__name__)
 CONFIG_PATH = '/home/admin/.config/mihomo/config.yaml'
 BACKUP_PATH = '/home/admin/.config/mihomo/config.yaml.backup'
 
+# 简单的缓存机制
+cache = {
+    'status': {'data': None, 'time': 0},
+    'logs': {'data': None, 'time': 0},
+    'traffic': {'data': None, 'time': 0}
+}
+CACHE_TTL = 2  # 缓存2秒
+
 
 def load_config_raw():
     if os.path.exists(CONFIG_PATH):
@@ -255,6 +263,11 @@ def update_rules():
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
+    # 检查缓存
+    current_time = time.time()
+    if cache['status']['data'] and (current_time - cache['status']['time']) < CACHE_TTL:
+        return jsonify(cache['status']['data'])
+    
     try:
         status = {
             'running': False,
@@ -349,10 +362,14 @@ def get_status():
         except:
             pass
         
-        return jsonify({
+        result = {
             'success': True,
             'status': status
-        })
+        }
+        # 保存到缓存
+        cache['status']['data'] = result
+        cache['status']['time'] = time.time()
+        return jsonify(result)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -362,6 +379,11 @@ def get_status():
 
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
+    # 检查缓存
+    current_time = time.time()
+    if cache['logs']['data'] and (current_time - cache['logs']['time']) < CACHE_TTL:
+        return jsonify(cache['logs']['data'])
+    
     try:
         # 获取 mihomo 日志
         # 尝试从 systemd journal 获取
@@ -390,11 +412,15 @@ def get_logs():
                         except:
                             pass
         
-        return jsonify({
+        result = {
             'success': True,
             'logs': [line for line in logs if line.strip()],
             'source': 'systemd' if len(logs) > 0 and 'journalctl' in str(subprocess.run('which journalctl', shell=True, capture_output=True, text=True).stdout) else 'file'
-        })
+        }
+        # 保存到缓存
+        cache['logs']['data'] = result
+        cache['logs']['time'] = time.time()
+        return jsonify(result)
     except Exception as e:
         return jsonify({
             'success': False,
@@ -404,6 +430,11 @@ def get_logs():
 
 @app.route('/api/traffic', methods=['GET'])
 def get_traffic():
+    # 检查缓存
+    current_time = time.time()
+    if cache['traffic']['data'] and (current_time - cache['traffic']['time']) < CACHE_TTL:
+        return jsonify(cache['traffic']['data'])
+    
     try:
         # 从 mihomo API 获取流量和连接信息
         controller_url = 'http://127.0.0.1:9090'
@@ -433,10 +464,93 @@ def get_traffic():
         except:
             pass
         
-        return jsonify({
+        response_data = {
             'success': True,
             'data': result
+        }
+        # 保存到缓存
+        cache['traffic']['data'] = response_data
+        cache['traffic']['time'] = time.time()
+        return jsonify(response_data)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
         })
+
+
+@app.route('/api/proxies/runtime', methods=['GET'])
+def get_runtime_proxies():
+    try:
+        controller_url = 'http://127.0.0.1:9090'
+        secret = '123456'
+        headers = {'Authorization': f'Bearer {secret}'}
+        
+        response = requests.get(f'{controller_url}/proxies', headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            proxy_groups = []
+            proxies = data.get('proxies', {})
+            
+            for name, proxy in proxies.items():
+                if proxy.get('type') == 'Selector':
+                    proxy_groups.append({
+                        'name': name,
+                        'type': proxy.get('type'),
+                        'now': proxy.get('now'),
+                        'all': proxy.get('all', [])
+                    })
+            
+            return jsonify({
+                'success': True,
+                'proxyGroups': proxy_groups,
+                'allProxies': proxies
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'API返回错误: {response.status_code}'
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@app.route('/api/proxies/runtime/<group_name>', methods=['PUT'])
+def update_runtime_proxy_group(group_name):
+    try:
+        data = request.get_json()
+        selected_proxy = data.get('name')
+        
+        if not selected_proxy:
+            return jsonify({
+                'success': False,
+                'error': '请指定代理名称'
+            })
+        
+        controller_url = 'http://127.0.0.1:9090'
+        secret = '123456'
+        headers = {'Authorization': f'Bearer {secret}'}
+        
+        response = requests.put(
+            f'{controller_url}/proxies/{group_name}',
+            headers=headers,
+            json={'name': selected_proxy},
+            timeout=5
+        )
+        
+        if response.status_code == 204:
+            return jsonify({
+                'success': True,
+                'message': f'代理组 "{group_name}" 已切换到 "{selected_proxy}"'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'API返回错误: {response.status_code}'
+            })
     except Exception as e:
         return jsonify({
             'success': False,

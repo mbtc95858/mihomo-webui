@@ -337,7 +337,10 @@
                 <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">策略规则</small>
             </div>
             <a class="sidebar-link" data-section="proxy-groups">
-                <i class="bi bi-diagram-3"></i><span>代理组</span>
+                <i class="bi bi-diagram-3"></i><span>代理组配置</span>
+            </a>
+            <a class="sidebar-link" data-section="proxy-nodes">
+                <i class="bi bi-node-plus"></i><span>节点选择</span>
             </a>
             <a class="sidebar-link" data-section="rules">
                 <i class="bi bi-list-check"></i><span>规则</span>
@@ -354,8 +357,8 @@
             <a class="sidebar-link" data-section="logs">
                 <i class="bi bi-journal-text"></i><span>日志查看</span>
             </a>
-            <a class="sidebar-link" data-section="topology">
-                <i class="bi bi-diagram-3-fill"></i><span>拓扑图</span>
+            <a class="sidebar-link" data-section="rule-flow">
+                <i class="bi bi-flowchart"></i><span>规则流程图</span>
             </a>
             <div class="px-3 py-2">
                 <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">其他</small>
@@ -838,6 +841,31 @@
                 </div>
             </div>
 
+            <div class="content-section" id="section-proxy-nodes">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-node-plus me-2"></i>代理组节点选择</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="proxyGroupSearch" placeholder="搜索代理组...">
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshProxyGroupsBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="proxyNodesList">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="content-section" id="section-status">
                 <div class="row g-4">
                     <div class="col-lg-6">
@@ -1086,21 +1114,21 @@
                 </div>
             </div>
 
-            <div class="content-section" id="section-topology">
+            <div class="content-section" id="section-rule-flow">
                 <div class="card">
                     <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="bi bi-diagram-3-fill me-2"></i>代理组拓扑图</h5>
+                        <h5 class="mb-0"><i class="bi bi-flowchart me-2"></i>规则流程图</h5>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary" id="refreshTopologyBtn">
+                            <button class="btn btn-outline-primary" id="refreshRuleFlowBtn">
                                 <i class="bi bi-arrow-clockwise me-1"></i> 刷新
                             </button>
                         </div>
                     </div>
                     <div class="card-body">
-                        <div id="topologyContainer" style="min-height: 600px; background: #f8fafc; border-radius: 0.5rem; overflow: hidden;">
+                        <div id="ruleFlowContainer" style="min-height: 600px; background: #f8fafc; border-radius: 0.5rem; overflow: auto; padding: 2rem;">
                             <div class="text-center text-muted py-5">
-                                <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
-                                <p class="mt-2">加载拓扑图中...</p>
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载规则流程图中...</p>
                             </div>
                         </div>
                     </div>
@@ -1195,7 +1223,8 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">策略/代理组</label>
-                            <input type="text" class="form-control" id="rulePolicy" required placeholder="例如: 代理选择">
+                            <select class="form-select" id="rulePolicy" required>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">参数（可选）</label>
@@ -1360,12 +1389,13 @@
                 'tun': 'TUN 设置',
                 'dns': 'DNS 设置',
                 'sniffer': '嗅探设置',
-                'proxy-groups': '代理组',
+                'proxy-groups': '代理组配置',
+                'proxy-nodes': '节点选择',
                 'rules': '规则',
+                'rule-flow': '规则流程图',
                 'status': '状态监控',
                 'traffic': '流量监控',
                 'logs': '日志查看',
-                'topology': '拓扑图',
                 'raw-editor': '原始编辑器'
             };
             document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
@@ -1695,14 +1725,52 @@
             }
         }
 
+        function populateRulePolicySelect(selectedValue = '') {
+            const select = document.getElementById('rulePolicy');
+            select.innerHTML = '';
+            
+            // 添加标准策略选项
+            const standardPolicies = ['DIRECT', 'REJECT', 'PASS'];
+            standardPolicies.forEach(policy => {
+                const option = document.createElement('option');
+                option.value = policy;
+                option.textContent = policy;
+                if (policy === selectedValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            // 添加代理组选项
+            const proxyGroups = config['proxy-groups'] || [];
+            if (proxyGroups.length > 0) {
+                const groupSeparator = document.createElement('option');
+                groupSeparator.disabled = true;
+                groupSeparator.textContent = '────────── 代理组 ──────────';
+                select.appendChild(groupSeparator);
+                
+                proxyGroups.forEach(group => {
+                    if (group.name) {
+                        const option = document.createElement('option');
+                        option.value = group.name;
+                        option.textContent = group.name;
+                        if (group.name === selectedValue) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    }
+                });
+            }
+        }
+
         document.getElementById('addRuleBtn').addEventListener('click', () => {
             editingRuleIndex = -1;
             document.getElementById('ruleModalTitle').textContent = '添加规则';
             document.getElementById('ruleType').value = 'DOMAIN';
             document.getElementById('ruleValue').value = '';
-            document.getElementById('rulePolicy').value = '';
             document.getElementById('ruleParams').value = '';
             document.getElementById('ruleValueField').style.display = 'block';
+            populateRulePolicySelect();
             ruleModal.show();
         });
 
@@ -1721,9 +1789,9 @@
                 const parts = rule.split(',');
                 document.getElementById('ruleType').value = parts[0] || 'DOMAIN';
                 document.getElementById('ruleValue').value = parts[1] || '';
-                document.getElementById('rulePolicy').value = parts[2] || '';
                 document.getElementById('ruleParams').value = parts.slice(3).join(',') || '';
                 document.getElementById('ruleValueField').style.display = parts[0] === 'MATCH' ? 'none' : 'block';
+                populateRulePolicySelect(parts[2] || '');
             } else {
                 showToast('不支持编辑对象类型的规则', 'warning');
             }
@@ -1982,7 +2050,7 @@
 
         function startAutoRefresh() {
             if (autoRefreshInterval) return;
-            autoRefreshInterval = setInterval(updateStatus, 3000);
+            autoRefreshInterval = setInterval(updateStatus, 10000);
         }
 
         function stopAutoRefresh() {
@@ -2035,7 +2103,7 @@
         
         function startLogsAutoRefresh() {
             if (logsRefreshInterval) return;
-            logsRefreshInterval = setInterval(loadLogs, 5000);
+            logsRefreshInterval = setInterval(loadLogs, 15000);
         }
         
         function stopLogsAutoRefresh() {
@@ -2232,7 +2300,7 @@
         
         function startTrafficAutoRefresh() {
             if (trafficRefreshInterval) return;
-            trafficRefreshInterval = setInterval(loadTraffic, 2000);
+            trafficRefreshInterval = setInterval(loadTraffic, 8000);
         }
         
         function stopTrafficAutoRefresh() {
@@ -2281,6 +2349,303 @@
             });
         }
 
+        // 代理组节点选择功能
+        let proxyGroups = [];
+        let proxyGroupSearchTerm = '';
+
+        async function loadProxyGroups() {
+            try {
+                const response = await fetch('/api/proxies/runtime');
+                const data = await response.json();
+                if (data.success) {
+                    proxyGroups = data.proxyGroups;
+                    renderProxyGroups();
+                } else {
+                    showToast('加载代理组失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('加载代理组失败:', error);
+                showToast('加载代理组失败: ' + error.message, 'error');
+            }
+        }
+
+        function renderProxyGroups() {
+            const list = document.getElementById('proxyNodesList');
+            let groups = proxyGroups;
+            
+            // 过滤搜索
+            if (proxyGroupSearchTerm) {
+                groups = groups.filter(g => 
+                    g.name.toLowerCase().includes(proxyGroupSearchTerm.toLowerCase())
+                );
+            }
+            
+            // 过滤掉只有1个选项的代理组
+            groups = groups.filter(g => g.all && g.all.length > 1);
+            
+            if (groups.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>${proxyGroupSearchTerm ? '没有找到匹配的代理组' : '暂无可选择的代理组'}</h5>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = groups.map(group => `
+                <div class="list-group-item proxy-group-item d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1 me-3">
+                        <h6 class="mb-1 fw-semibold">${escapeHtml(group.name)}</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">当前: </span>
+                            <span class="badge bg-success">${escapeHtml(group.now || '未设置')}</span>
+                            <span class="text-muted small ms-3">可用节点: ${group.all.length}</span>
+                        </div>
+                    </div>
+                    <div style="min-width: 300px;">
+                        <select class="form-select proxy-node-select" data-group="${escapeHtml(group.name)}">
+                            <option value="">选择节点...</option>
+                            ${group.all.map(proxy => `
+                                <option value="${escapeHtml(proxy)}" ${proxy === group.now ? 'selected' : ''}>
+                                    ${escapeHtml(proxy)}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 绑定选择事件
+            document.querySelectorAll('.proxy-node-select').forEach(select => {
+                select.addEventListener('change', async (e) => {
+                    const groupName = e.target.dataset.group;
+                    const selectedProxy = e.target.value;
+                    if (selectedProxy) {
+                        await selectProxyNode(groupName, selectedProxy);
+                    }
+                });
+            });
+        }
+
+        async function selectProxyNode(groupName, proxyName) {
+            try {
+                const response = await fetch(`/api/proxies/runtime/${encodeURIComponent(groupName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: proxyName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message);
+                    await loadProxyGroups(); // 刷新列表
+                } else {
+                    showToast('切换失败: ' + data.error, 'error');
+                    await loadProxyGroups(); // 刷新以恢复原值
+                }
+            } catch (error) {
+                console.error('切换节点失败:', error);
+                showToast('切换失败: ' + error.message, 'error');
+                await loadProxyGroups();
+            }
+        }
+
+        // 代理组搜索
+        const proxyGroupSearch = document.getElementById('proxyGroupSearch');
+        if (proxyGroupSearch) {
+            proxyGroupSearch.addEventListener('input', (e) => {
+                proxyGroupSearchTerm = e.target.value;
+                renderProxyGroups();
+            });
+        }
+
+        // 刷新按钮
+        const refreshProxyGroupsBtn = document.getElementById('refreshProxyGroupsBtn');
+        if (refreshProxyGroupsBtn) {
+            refreshProxyGroupsBtn.addEventListener('click', loadProxyGroups);
+        }
+
+        // 规则流程图功能
+        let runtimeProxyGroups = [];
+
+        async function loadRuntimeProxyGroups() {
+            try {
+                const response = await fetch('/api/proxies/runtime');
+                const data = await response.json();
+                if (data.success) {
+                    runtimeProxyGroups = data.proxyGroups;
+                    renderRuleFlow();
+                }
+            } catch (error) {
+                console.error('加载运行时代理组失败:', error);
+            }
+        }
+
+        function getProxyGroupCurrent(groupName) {
+            const group = runtimeProxyGroups.find(g => g.name === groupName);
+            return group ? group.now : groupName;
+        }
+
+        function renderRuleFlow() {
+            const container = document.getElementById('ruleFlowContainer');
+            const rules = config.rules || [];
+            
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无规则</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="rule-flow-container">
+                    <style>
+                        .flow-node {
+                            padding: 1rem 1.5rem;
+                            border-radius: 0.75rem;
+                            margin: 0.5rem 0;
+                            position: relative;
+                            transition: all 0.2s ease;
+                            cursor: pointer;
+                        }
+                        .flow-node:hover {
+                            transform: translateX(5px);
+                        }
+                        .flow-start {
+                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                            color: white;
+                            text-align: center;
+                            font-weight: 600;
+                        }
+                        .flow-rule {
+                            background: white;
+                            border: 2px solid #e2e8f0;
+                            border-left: 4px solid #6366f1;
+                        }
+                        .flow-rule:hover {
+                            border-color: #6366f1;
+                            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+                        }
+                        .flow-policy {
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+                        .flow-end {
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            color: white;
+                            text-align: center;
+                            font-weight: 600;
+                        }
+                        .flow-arrow {
+                            text-align: center;
+                            color: #94a3b8;
+                            font-size: 1.5rem;
+                            margin: 0.25rem 0;
+                        }
+                        .rule-type {
+                            display: inline-block;
+                            padding: 0.25rem 0.5rem;
+                            background: #e0e7ff;
+                            color: #4338ca;
+                            border-radius: 0.375rem;
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            margin-right: 0.5rem;
+                        }
+                        .rule-value {
+                            font-family: 'JetBrains Mono', monospace;
+                            background: #f1f5f9;
+                            padding: 0.25rem 0.5rem;
+                            border-radius: 0.25rem;
+                            font-size: 0.875rem;
+                        }
+                        .policy-badge {
+                            background: rgba(255,255,255,0.2);
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 2rem;
+                            font-size: 0.875rem;
+                        }
+                        .edit-btn {
+                            background: rgba(255,255,255,0.2);
+                            border: none;
+                            color: white;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 0.375rem;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                        }
+                        .edit-btn:hover {
+                            background: rgba(255,255,255,0.3);
+                        }
+                    </style>
+                    
+                    <div class="flow-node flow-start">
+                        <i class="bi bi-play-circle me-2"></i>流量进入
+                    </div>
+            `;
+
+            rules.forEach((rule, index) => {
+                let ruleType, ruleValue, policy, params;
+                
+                if (typeof rule === 'string') {
+                    const parts = rule.split(',');
+                    ruleType = parts[0] || '';
+                    ruleValue = parts[1] || '';
+                    policy = parts[2] || '';
+                    params = parts.slice(3).join(',') || '';
+                } else {
+                    ruleType = 'Object';
+                    ruleValue = JSON.stringify(rule);
+                    policy = '';
+                }
+
+                const currentNode = getProxyGroupCurrent(policy);
+                
+                html += `
+                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+                    <div class="flow-node flow-rule" data-rule-index="${index}">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <span class="rule-type">${escapeHtml(ruleType)}</span>
+                            ${ruleValue ? `<span class="rule-value">${escapeHtml(ruleValue)}</span>` : ''}
+                            ${params ? `<span class="text-muted small ms-2">${escapeHtml(params)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+                    <div class="flow-node flow-policy">
+                        <div>
+                            <i class="bi bi-signpost-2 me-2"></i>
+                            <strong>策略:</strong> <span class="policy-badge">${escapeHtml(policy)}</span>
+                            ${currentNode !== policy ? `<span class="ms-2"><i class="bi bi-arrow-right"></i> <span class="policy-badge">${escapeHtml(currentNode)}</span></span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
+                    <div class="flow-node flow-end">
+                        <i class="bi bi-check-circle me-2"></i>完成路由
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 刷新规则流程图按钮
+        const refreshRuleFlowBtn = document.getElementById('refreshRuleFlowBtn');
+        if (refreshRuleFlowBtn) {
+            refreshRuleFlowBtn.addEventListener('click', () => {
+                loadRuntimeProxyGroups();
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             loadConfig();
             loadRawConfig();
@@ -2288,9 +2653,10 @@
             startAutoRefresh();
             loadLogs();
             startLogsAutoRefresh();
-            renderTopology();
             loadTraffic();
             startTrafficAutoRefresh();
+            loadProxyGroups();
+            loadRuntimeProxyGroups();
         });
     </script>
 </body>
