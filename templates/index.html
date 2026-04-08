@@ -1646,37 +1646,7 @@
             }).join('');
         }
 
-        document.getElementById('proxyGroupsConfigSearch').addEventListener('input', (e) => {
-            proxyGroupsConfigSearchTerm = e.target.value;
-            renderProxyGroups();
-        });
 
-        document.getElementById('ruleSearch').addEventListener('input', (e) => {
-            ruleSearchTerm = e.target.value;
-            renderRules();
-        });
-
-        document.getElementById('ruleSortSelect').addEventListener('change', (e) => {
-            currentRuleSort = e.target.value;
-            renderRules();
-        });
-
-        document.getElementById('resetRuleOrderBtn').addEventListener('click', () => {
-            currentRuleSort = 'default';
-            document.getElementById('ruleSortSelect').value = 'default';
-            // 恢复原始规则顺序
-            config.rules = [...originalRules];
-            saveAllConfig();
-        });
-
-        document.getElementById('addProxyGroupBtn').addEventListener('click', () => {
-            editingProxyGroupIndex = -1;
-            document.getElementById('proxyGroupModalTitle').textContent = '添加代理组';
-            document.getElementById('proxyGroupName').value = '';
-            document.getElementById('proxyGroupType').value = 'select';
-            document.getElementById('proxyGroupProxies').value = '';
-            proxyGroupModal.show();
-        });
 
         function editProxyGroup(index) {
             editingProxyGroupIndex = index;
@@ -1688,29 +1658,7 @@
             proxyGroupModal.show();
         }
 
-        document.getElementById('saveProxyGroupBtn').addEventListener('click', async () => {
-            const name = document.getElementById('proxyGroupName').value.trim();
-            const type = document.getElementById('proxyGroupType').value;
-            const proxiesText = document.getElementById('proxyGroupProxies').value;
-            const proxies = proxiesText.split('\n').map(s => s.trim()).filter(s => s);
-            
-            if (!name) {
-                showToast('请输入名称', 'error');
-                return;
-            }
-            
-            const group = { name, type, proxies };
-            
-            if (editingProxyGroupIndex >= 0) {
-                config['proxy-groups'][editingProxyGroupIndex] = group;
-            } else {
-                if (!config['proxy-groups']) config['proxy-groups'] = [];
-                config['proxy-groups'].push(group);
-            }
-            
-            await saveAllConfig();
-            proxyGroupModal.hide();
-        });
+
 
         function deleteProxyGroup(index) {
             if (confirm('确定要删除这个代理组吗？')) {
@@ -1757,21 +1705,7 @@
             }
         }
 
-        document.getElementById('addRuleBtn').addEventListener('click', () => {
-            editingRuleIndex = -1;
-            document.getElementById('ruleModalTitle').textContent = '添加规则';
-            document.getElementById('ruleType').value = 'DOMAIN';
-            document.getElementById('ruleValue').value = '';
-            document.getElementById('ruleParams').value = '';
-            document.getElementById('ruleValueField').style.display = 'block';
-            populateRulePolicySelect();
-            ruleModal.show();
-        });
 
-        document.getElementById('ruleType').addEventListener('change', (e) => {
-            const valueField = document.getElementById('ruleValueField');
-            valueField.style.display = e.target.value === 'MATCH' ? 'none' : 'block';
-        });
 
         function editRule(index) {
             editingRuleIndex = index;
@@ -1793,37 +1727,7 @@
             ruleModal.show();
         }
 
-        document.getElementById('saveRuleBtn').addEventListener('click', async () => {
-            const type = document.getElementById('ruleType').value;
-            const value = document.getElementById('ruleValue').value.trim();
-            const policy = document.getElementById('rulePolicy').value.trim();
-            const params = document.getElementById('ruleParams').value.trim();
-            
-            if (!policy && type !== 'MATCH') {
-                showToast('请输入策略', 'error');
-                return;
-            }
-            
-            let rule = type;
-            if (type !== 'MATCH') {
-                rule += ',' + value;
-            }
-            rule += ',' + policy;
-            if (params) {
-                rule += ',' + params;
-            }
-            
-            if (editingRuleIndex >= 0) {
-                config['rules'][editingRuleIndex] = rule;
-            } else {
-                if (!config['rules']) config['rules'] = [];
-                // 新规则添加到最上方
-                config['rules'].unshift(rule);
-            }
-            
-            await saveAllConfig();
-            ruleModal.hide();
-        });
+
 
         function deleteRule(index) {
             if (confirm('确定要删除这个规则吗？')) {
@@ -1883,15 +1787,7 @@
             }
         }
 
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            loadConfig();
-            loadRawConfig();
-        });
 
-        document.getElementById('saveAllBtn').addEventListener('click', saveAllConfig);
-        document.getElementById('loadRawConfigBtn').addEventListener('click', loadRawConfig);
-        document.getElementById('saveRawConfigBtn').addEventListener('click', saveRawConfig);
-        document.getElementById('restartServiceBtn').addEventListener('click', restartService);
 
         let autoRefreshInterval = null;
         let autoRefreshEnabled = true;
@@ -2444,20 +2340,7 @@
             }
         }
 
-        // 代理组搜索
-        const proxyGroupSearch = document.getElementById('proxyGroupSearch');
-        if (proxyGroupSearch) {
-            proxyGroupSearch.addEventListener('input', (e) => {
-                proxyGroupSearchTerm = e.target.value;
-                renderProxyNodes();
-            });
-        }
 
-        // 刷新按钮
-        const refreshProxyGroupsBtn = document.getElementById('refreshProxyGroupsBtn');
-        if (refreshProxyGroupsBtn) {
-            refreshProxyGroupsBtn.addEventListener('click', loadProxyGroups);
-        }
 
         // 规则流程图功能
         let runtimeProxyGroups = [];
@@ -2659,6 +2542,156 @@
                 refreshRuleFlowBtn.addEventListener('click', () => {
                     renderRuleFlow();
                 });
+            }
+
+            // 代理组配置搜索
+            document.getElementById('proxyGroupsConfigSearch').addEventListener('input', (e) => {
+                proxyGroupsConfigSearchTerm = e.target.value;
+                renderProxyGroups();
+            });
+
+            // 规则搜索
+            document.getElementById('ruleSearch').addEventListener('input', (e) => {
+                ruleSearchTerm = e.target.value;
+                renderRules();
+            });
+
+            // 规则排序
+            document.getElementById('ruleSortSelect').addEventListener('change', (e) => {
+                currentRuleSort = e.target.value;
+                renderRules();
+            });
+
+            // 重置规则顺序
+            document.getElementById('resetRuleOrderBtn').addEventListener('click', () => {
+                currentRuleSort = 'default';
+                document.getElementById('ruleSortSelect').value = 'default';
+                config.rules = [...originalRules];
+                saveAllConfig();
+            });
+
+            // 添加代理组
+            document.getElementById('addProxyGroupBtn').addEventListener('click', () => {
+                editingProxyGroupIndex = -1;
+                document.getElementById('proxyGroupModalTitle').textContent = '添加代理组';
+                document.getElementById('proxyGroupName').value = '';
+                document.getElementById('proxyGroupType').value = 'select';
+                document.getElementById('proxyGroupProxies').value = '';
+                proxyGroupModal.show();
+            });
+
+            // 保存代理组
+            document.getElementById('saveProxyGroupBtn').addEventListener('click', async () => {
+                const name = document.getElementById('proxyGroupName').value.trim();
+                const type = document.getElementById('proxyGroupType').value;
+                const proxiesText = document.getElementById('proxyGroupProxies').value;
+                const proxies = proxiesText.split('\n').map(s => s.trim()).filter(s => s);
+                
+                if (!name) {
+                    showToast('请输入名称', 'error');
+                    return;
+                }
+                
+                const group = { name, type, proxies };
+                
+                if (editingProxyGroupIndex >= 0) {
+                    config['proxy-groups'][editingProxyGroupIndex] = group;
+                } else {
+                    if (!config['proxy-groups']) config['proxy-groups'] = [];
+                    config['proxy-groups'].push(group);
+                }
+                
+                await saveAllConfig();
+                proxyGroupModal.hide();
+            });
+
+            // 添加规则
+            document.getElementById('addRuleBtn').addEventListener('click', () => {
+                editingRuleIndex = -1;
+                document.getElementById('ruleModalTitle').textContent = '添加规则';
+                document.getElementById('ruleType').value = 'DOMAIN';
+                document.getElementById('ruleValue').value = '';
+                document.getElementById('ruleParams').value = '';
+                document.getElementById('ruleValueField').style.display = 'block';
+                populateRulePolicySelect();
+                ruleModal.show();
+            });
+
+            // 规则类型变更
+            document.getElementById('ruleType').addEventListener('change', (e) => {
+                const valueField = document.getElementById('ruleValueField');
+                valueField.style.display = e.target.value === 'MATCH' ? 'none' : 'block';
+            });
+
+            // 保存规则
+            document.getElementById('saveRuleBtn').addEventListener('click', async () => {
+                const type = document.getElementById('ruleType').value;
+                const value = document.getElementById('ruleValue').value.trim();
+                const policy = document.getElementById('rulePolicy').value.trim();
+                const params = document.getElementById('ruleParams').value.trim();
+                
+                if (!policy && type !== 'MATCH') {
+                    showToast('请输入策略', 'error');
+                    return;
+                }
+                
+                let rule = type;
+                if (type !== 'MATCH') {
+                    rule += ',' + value;
+                }
+                rule += ',' + policy;
+                if (params) {
+                    rule += ',' + params;
+                }
+                
+                if (editingRuleIndex >= 0) {
+                    config['rules'][editingRuleIndex] = rule;
+                } else {
+                    if (!config['rules']) config['rules'] = [];
+                    config['rules'].unshift(rule);
+                }
+                
+                await saveAllConfig();
+                ruleModal.hide();
+            });
+
+            // 刷新按钮
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                loadConfig();
+                loadRawConfig();
+            });
+
+            // 保存全部
+            document.getElementById('saveAllBtn').addEventListener('click', saveAllConfig);
+            
+            // 加载原始配置
+            const loadRawConfigBtn = document.getElementById('loadRawConfigBtn');
+            if (loadRawConfigBtn) {
+                loadRawConfigBtn.addEventListener('click', loadRawConfig);
+            }
+            
+            // 保存原始配置
+            const saveRawConfigBtn = document.getElementById('saveRawConfigBtn');
+            if (saveRawConfigBtn) {
+                saveRawConfigBtn.addEventListener('click', saveRawConfig);
+            }
+            
+            // 重启服务
+            document.getElementById('restartServiceBtn').addEventListener('click', restartService);
+
+            // 代理组搜索
+            const proxyGroupSearch = document.getElementById('proxyGroupSearch');
+            if (proxyGroupSearch) {
+                proxyGroupSearch.addEventListener('input', (e) => {
+                    proxyGroupSearchTerm = e.target.value;
+                    renderProxyNodes();
+                });
+            }
+
+            // 刷新代理组按钮
+            const refreshProxyGroupsBtn = document.getElementById('refreshProxyGroupsBtn');
+            if (refreshProxyGroupsBtn) {
+                refreshProxyGroupsBtn.addEventListener('click', loadProxyGroups);
             }
         });
     </script>
