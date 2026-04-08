@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, make_response
 import yaml
 import os
 import subprocess
@@ -6,11 +6,17 @@ import shutil
 import time
 import shlex
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 
 CONFIG_PATH = '/home/admin/.config/mihomo/config.yaml'
 BACKUP_PATH = '/home/admin/.config/mihomo/config.yaml.backup'
+
+# Mihomo API 配置
+MIHOMO_CONTROLLER_URL = 'http://127.0.0.1:9090'
+MIHOMO_SECRET = '123456'
+MIHOMO_HEADERS = {'Authorization': f'Bearer {MIHOMO_SECRET}'}
 
 # 缓存机制（优化性能）
 cache = {
@@ -20,6 +26,30 @@ cache = {
     'config': {'data': None, 'time': 0}  # 新增：配置缓存
 }
 CACHE_TTL = 10  # 缓存10秒，与前端刷新间隔匹配
+
+
+def reload_mihomo_config():
+    """通过 Mihomo API 热重载配置，避免进程重启"""
+    try:
+        # 1. 读取当前配置文件
+        config = load_config()
+        
+        # 2. 通过 PUT 方法发送完整配置热重载
+        response = requests.put(
+            f'{MIHOMO_CONTROLLER_URL}/configs',
+            headers={
+                'Authorization': f'Bearer {MIHOMO_SECRET}',
+                'Content-Type': 'application/json'
+            },
+            json=config,
+            timeout=5
+        )
+        if response.status_code in [200, 204]:
+            return True, 'Mihomo 配置热重载成功'
+        else:
+            return False, f'热重载失败: HTTP {response.status_code}'
+    except Exception as e:
+        return False, f'热重载异常: {str(e)}'
 
 
 def load_config_raw():
@@ -121,7 +151,11 @@ def restart_mihomo():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    response = make_response(render_template('index.html'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route('/api/config/raw', methods=['GET'])
@@ -200,9 +234,17 @@ def update_config():
         
         merged_config = deep_merge(original_config, new_config)
         save_config(merged_config)
+        
+        # 热重载配置，避免进程重启
+        reload_success, reload_message = reload_mihomo_config()
+        if reload_success:
+            message = f'配置保存成功，{reload_message}'
+        else:
+            message = f'配置保存成功，但{reload_message}（请手动重启服务）'
+        
         return jsonify({
             'success': True,
-            'message': '配置保存成功'
+            'message': message
         })
     except Exception as e:
         return jsonify({
@@ -308,83 +350,136 @@ def get_status():
             'tun_enabled': False
         }
         
-        # 获取进程信息
-        ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)
-        for line in ps_result.stdout.split('\n'):
-            if 'mihomo' in line and 'grep' not in line:
-                parts = line.split()
-                if len(parts) > 10:
-                    status['running'] = True
-                    status['pid'] = parts[1]
-                    status['cpu'] = parts[2]
-                    status['memory'] = parts[3]
-                    status['command'] = ' '.join(parts[10:])
-                    
-                    # 获取进程启动时间
-                    try:
-                        stat_result = subprocess.run(['ps', '-p', parts[1], '-o', 'lstart='], 
-                                                   capture_output=True, text=True, timeout=2)
-                        if stat_result.returncode == 0:
-                            status['uptime'] = stat_result.stdout.strip()
-                    except Exception as e:
-                        pass
+        # 使用 pgrep 更高效地查找 mihomo 进程
+        try:
+            pgrep_result = subprocess.run(['pgrep', '-a', 'mihomo'], capture_output=True, text=True, timeout=2)
+            if pgrep_result.returncode == 0 and pgrep_result.stdout.strip():
+                lines = pgrep_result.stdout.strip().split('\n')
+                for line in lines:
+                    if 'grep' not in line:
+                        parts = line.split(maxsplit=1)
+                        if len(parts) >= 1:
+                            status['pid'] = parts[0]
+                            status['running'] = True
+                            if len(parts) > 1:
+                                status['command'] = parts[1]
+                        break
+        except Exception:
+            pass
         
-        # 获取监听端口
+        # 如果 pgrep 失败，回退到 ps 命令
+        if not status['running']:
+            try:
+                ps_result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=3)
+                for line in ps_result.stdout.split('\n'):
+                    if 'mihomo' in line and 'grep' not in line:
+                        parts = line.split()
+                        if len(parts) > 10:
+                            status['running'] = True
+                            status['pid'] = parts[1]
+                            status['cpu'] = parts[2]
+                            status['memory'] = parts[3]
+                            status['command'] = ' '.join(parts[10:])
+                            break
+            except Exception:
+                pass
+        
+        # 获取进程详细信息
         if status['pid']:
             try:
-                netstat_result = subprocess.run(['netstat', '-tlnp'], capture_output=True, text=True, timeout=5)
-                for line in netstat_result.stdout.split('\n'):
-                    if status['pid'] in line:
-                        parts = line.split()
-                        if len(parts) > 3:
-                            local_addr = parts[3]
-                            if ':' in local_addr:
-                                port = local_addr.split(':')[-1]
-                                if port not in status['ports']:
-                                    status['ports'].append(port)
-            except Exception as e:
+                # 使用单个命令获取 CPU、内存和启动时间
+                stat_result = subprocess.run(
+                    ['ps', '-p', status['pid'], '-o', 'pcpu,pmem,lstart=', '--no-headers'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if stat_result.returncode == 0:
+                    parts = stat_result.stdout.strip().split()
+                    if len(parts) >= 3:
+                        status['cpu'] = parts[0]
+                        status['memory'] = parts[1]
+                        status['uptime'] = ' '.join(parts[2:])
+            except Exception:
+                pass
+            
+            # 获取监听端口 - 只查询该 PID 的端口
+            try:
+                # 使用 lsof 直接查询特定 PID 的端口（更快）
+                lsof_result = subprocess.run(
+                    ['lsof', '-a', '-p', status['pid'], '-i', 'TCP', '-s', 'TCP:LISTEN', '-P', '-n'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if lsof_result.returncode == 0:
+                    for line in lsof_result.stdout.split('\n')[1:]:  # 跳过标题行
+                        if 'LISTEN' in line:
+                            parts = line.split()
+                            if len(parts) >= 9:
+                                addr = parts[8]
+                                if ':' in addr:
+                                    port = addr.split(':')[-1]
+                                    if port not in status['ports']:
+                                        status['ports'].append(port)
+            except Exception:
+                # 回退到 netstat
                 try:
-                    ss_result = subprocess.run(['ss', '-tlnp'], capture_output=True, text=True, timeout=5)
-                    for line in ss_result.stdout.split('\n'):
+                    netstat_result = subprocess.run(['netstat', '-tlnp'], capture_output=True, text=True, timeout=3)
+                    for line in netstat_result.stdout.split('\n'):
                         if status['pid'] in line:
                             parts = line.split()
-                            if len(parts) > 4:
-                                local_addr = parts[4]
+                            if len(parts) > 3:
+                                local_addr = parts[3]
                                 if ':' in local_addr:
                                     port = local_addr.split(':')[-1]
                                     if port not in status['ports']:
                                         status['ports'].append(port)
-                except Exception as e:
+                except Exception:
                     pass
         
-        # 从 Mihomo API 获取额外信息
-        try:
+        # 并发请求 Mihomo API
+        def fetch_mihomo_info():
             controller_url = 'http://127.0.0.1:9090'
             secret = '123456'
             headers = {'Authorization': f'Bearer {secret}'}
             
-            # 获取版本信息
-            try:
-                version_response = requests.get(f'{controller_url}/version', headers=headers, timeout=2)
-                if version_response.status_code == 200:
-                    status['version'] = version_response.json().get('version')
-            except Exception as e:
-                pass
+            def fetch_version():
+                try:
+                    resp = requests.get(f'{controller_url}/version', headers=headers, timeout=1)
+                    if resp.status_code == 200:
+                        return ('version', resp.json().get('version'))
+                except Exception:
+                    pass
+                return ('version', None)
             
-            # 获取运行配置
-            try:
-                config_response = requests.get(f'{controller_url}/configs', headers=headers, timeout=2)
-                if config_response.status_code == 200:
-                    config_data = config_response.json()
-                    status['mode'] = config_data.get('mode')
-                    status['mixed_port'] = config_data.get('mixed-port')
-                    status['allow_lan'] = config_data.get('allow-lan', False)
-                    tun_config = config_data.get('tun', {})
-                    status['tun_enabled'] = tun_config.get('enable', False) if isinstance(tun_config, dict) else False
-            except Exception as e:
-                pass
-        except Exception as e:
-            pass
+            def fetch_config():
+                try:
+                    resp = requests.get(f'{controller_url}/configs', headers=headers, timeout=1)
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        return ('config', {
+                            'mode': data.get('mode'),
+                            'mixed_port': data.get('mixed-port'),
+                            'allow_lan': data.get('allow-lan', False),
+                            'tun_enabled': data.get('tun', {}).get('enable', False) if isinstance(data.get('tun'), dict) else False
+                        })
+                except Exception:
+                    pass
+                return ('config', None)
+            
+            # 使用线程池并发请求
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                futures = [executor.submit(fetch_version), executor.submit(fetch_config)]
+                for future in as_completed(futures):
+                    key, value = future.result()
+                    if key == 'version' and value:
+                        status['version'] = value
+                    elif key == 'config' and value:
+                        status['mode'] = value['mode']
+                        status['mixed_port'] = value['mixed_port']
+                        status['allow_lan'] = value['allow_lan']
+                        status['tun_enabled'] = value['tun_enabled']
+        
+        # 只在 mihomo 运行时才请求 API
+        if status['running']:
+            fetch_mihomo_info()
         
         result = {
             'success': True,
@@ -587,11 +682,20 @@ def update_runtime_proxy_group(group_name):
 
 @app.route('/api/restart', methods=['POST'])
 def restart():
-    success, message = restart_mihomo()
-    return jsonify({
-        'success': success,
-        'message': message
-    })
+    # 优先使用热重载，避免进程重启
+    success, message = reload_mihomo_config()
+    if success:
+        return jsonify({
+            'success': True,
+            'message': message
+        })
+    else:
+        # 热重载失败时回退到进程重启
+        success, message = restart_mihomo()
+        return jsonify({
+            'success': success,
+            'message': f'{message} (热重载失败，已回退到进程重启)'
+        })
 
 
 if __name__ == '__main__':
