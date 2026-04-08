@@ -1399,6 +1399,10 @@
                 'raw-editor': '原始编辑器'
             };
             document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
+            
+            if (sectionId === 'rule-flow') {
+                renderRuleFlow();
+            }
         }
 
         document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
@@ -1429,6 +1433,7 @@
                     loadConfigToForm();
                     renderProxyGroups();
                     renderRules();
+                    renderRuleFlow();
                 } else {
                     showToast('加载失败: ' + data.error, 'error');
                 }
@@ -1864,6 +1869,7 @@
                     updateDashboard();
                     renderProxyGroups();
                     renderRules();
+                    renderRuleFlow();
                 } else {
                     showToast('保存失败: ' + data.error, 'error');
                 }
