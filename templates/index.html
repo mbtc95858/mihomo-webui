@@ -1951,6 +1951,51 @@
                             (config['rules'] || []).length + ' 个';
                         document.getElementById('detailRuleProviders').textContent = 
                             Object.keys(config['rule-providers'] || {}).length + ' 个';
+                        
+                        // 更新实时监控区域
+                        const monitoringPlaceholder = document.getElementById('monitoringPlaceholder');
+                        if (monitoringPlaceholder) {
+                            monitoringPlaceholder.innerHTML = `
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h6 class="text-muted mb-2"><i class="bi bi-cpu me-1"></i>CPU 使用率</h6>
+                                            <div class="d-flex align-items-end">
+                                                <h2 class="fw-bold mb-0 me-2">${status.cpu || '0'}</h2>
+                                                <span class="text-muted">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h6 class="text-muted mb-2"><i class="bi bi-memory me-1"></i>内存使用率</h6>
+                                            <div class="d-flex align-items-end">
+                                                <h2 class="fw-bold mb-0 me-2">${status.memory || '0'}</h2>
+                                                <span class="text-muted">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h6 class="text-muted mb-2"><i class="bi bi-clock-history me-1"></i>运行时间</h6>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-play-circle text-success me-2"></i>
+                                                <span class="fw-semibold">${status.uptime || '-'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <h6 class="text-muted mb-2"><i class="bi bi-hash me-1"></i>进程 ID</h6>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-terminal text-primary me-2"></i>
+                                                <span class="fw-semibold">${status.pid || '-'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     } else {
                         // 顶部状态栏
                         statusDot.classList.remove('running');
@@ -1987,6 +2032,17 @@
                         
                         if (detailPorts) {
                             detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
+                        }
+                        
+                        // 未运行时显示占位符
+                        const monitoringPlaceholder = document.getElementById('monitoringPlaceholder');
+                        if (monitoringPlaceholder) {
+                            monitoringPlaceholder.innerHTML = `
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-exclamation-circle" style="font-size: 3rem;"></i>
+                                    <p class="mt-2">Mihomo 未运行</p>
+                                </div>
+                            `;
                         }
                     }
                 }
