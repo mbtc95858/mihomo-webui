@@ -1403,6 +1403,8 @@
             
             if (sectionId === 'rule-flow') {
                 renderRuleFlow();
+            } else if (sectionId === 'proxy-nodes') {
+                loadProxyGroups();
             }
         }
 
@@ -1499,7 +1501,7 @@
                 list.innerHTML = `
                     <div class="empty-state">
                         <i class="bi bi-inbox"></i>
-                        <h5>${proxyGroupSearchTerm ? '没有找到匹配的代理组' : '暂无代理组'}</h5>
+                        <h5>${proxyGroupsConfigSearchTerm ? '没有找到匹配的代理组' : '暂无代理组'}</h5>
                         <p>点击上方按钮添加新的代理组</p>
                     </div>
                 `;
@@ -2351,7 +2353,7 @@
                 const data = await response.json();
                 if (data.success) {
                     proxyGroups = data.proxyGroups;
-                    renderProxyGroups();
+                    renderProxyNodes();
                 } else {
                     showToast('加载代理组失败: ' + data.error, 'error');
                 }
@@ -2361,7 +2363,7 @@
             }
         }
 
-        function renderProxyGroups() {
+        function renderProxyNodes() {
             const list = document.getElementById('proxyNodesList');
             let groups = proxyGroups;
             
@@ -2447,7 +2449,7 @@
         if (proxyGroupSearch) {
             proxyGroupSearch.addEventListener('input', (e) => {
                 proxyGroupSearchTerm = e.target.value;
-                renderProxyGroups();
+                renderProxyNodes();
             });
         }
 
