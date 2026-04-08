@@ -1405,20 +1405,6 @@
             }
         }
 
-        document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
-            link.addEventListener('click', () => {
-                switchSection(link.dataset.section);
-            });
-        });
-
-        document.querySelectorAll('.quick-action-btn[data-goto]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                switchSection(btn.dataset.goto);
-            });
-        });
-
-        document.getElementById('quickRestartBtn').addEventListener('click', restartService);
-
         async function loadConfig() {
             try {
                 const response = await fetch('/api/config');
@@ -2642,14 +2628,6 @@
             container.innerHTML = html;
         }
 
-        // 刷新规则流程图按钮
-        const refreshRuleFlowBtn = document.getElementById('refreshRuleFlowBtn');
-        if (refreshRuleFlowBtn) {
-            refreshRuleFlowBtn.addEventListener('click', () => {
-                renderRuleFlow();
-            });
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             loadConfig();
             loadRawConfig();
@@ -2660,6 +2638,27 @@
             loadTraffic();
             startTrafficAutoRefresh();
             loadProxyGroups();
+            
+            document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+                link.addEventListener('click', () => {
+                    switchSection(link.dataset.section);
+                });
+            });
+
+            document.querySelectorAll('.quick-action-btn[data-goto]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchSection(btn.dataset.goto);
+                });
+            });
+
+            document.getElementById('quickRestartBtn').addEventListener('click', restartService);
+            
+            const refreshRuleFlowBtn = document.getElementById('refreshRuleFlowBtn');
+            if (refreshRuleFlowBtn) {
+                refreshRuleFlowBtn.addEventListener('click', () => {
+                    renderRuleFlow();
+                });
+            }
         });
     </script>
 </body>
