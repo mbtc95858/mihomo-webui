@@ -796,7 +796,7 @@
                         <div class="d-flex gap-2">
                             <div class="search-box">
                                 <i class="bi bi-search"></i>
-                                <input type="text" class="form-control" id="proxyGroupSearch" placeholder="搜索代理组...">
+                                <input type="text" class="form-control" id="proxyGroupsConfigSearch" placeholder="搜索代理组...">
                             </div>
                             <button class="btn btn-primary" id="addProxyGroupBtn">
                                 <i class="bi bi-plus me-1"></i> 添加代理组
@@ -1246,6 +1246,7 @@
         let rawConfig = '';
         let editingProxyGroupIndex = -1;
         let editingRuleIndex = -1;
+        let proxyGroupsConfigSearchTerm = '';
         let proxyGroupSearchTerm = '';
         let ruleSearchTerm = '';
         let originalRules = [];
@@ -1488,8 +1489,8 @@
         function renderProxyGroups() {
             const list = document.getElementById('proxyGroupsList');
             const groups = (config['proxy-groups'] || []).filter(group => {
-                if (!proxyGroupSearchTerm) return true;
-                const term = proxyGroupSearchTerm.toLowerCase();
+                if (!proxyGroupsConfigSearchTerm) return true;
+                const term = proxyGroupsConfigSearchTerm.toLowerCase();
                 return group.name?.toLowerCase().includes(term) || 
                        group.type?.toLowerCase().includes(term);
             });
@@ -1643,8 +1644,8 @@
             }).join('');
         }
 
-        document.getElementById('proxyGroupSearch').addEventListener('input', (e) => {
-            proxyGroupSearchTerm = e.target.value;
+        document.getElementById('proxyGroupsConfigSearch').addEventListener('input', (e) => {
+            proxyGroupsConfigSearchTerm = e.target.value;
             renderProxyGroups();
         });
 
