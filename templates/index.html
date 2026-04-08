@@ -1066,13 +1066,27 @@
                             <table class="table table-hover mb-0 align-middle">
                                 <thead class="sticky-top bg-light" style="z-index: 10;">
                                     <tr>
-                                        <th style="min-width: 80px;">协议</th>
-                                        <th style="min-width: 120px;">源地址</th>
-                                        <th style="min-width: 150px;">目标地址</th>
-                                        <th style="min-width: 100px;">策略/代理</th>
-                                        <th style="min-width: 100px;">上行</th>
-                                        <th style="min-width: 100px;">下行</th>
-                                        <th style="min-width: 100px;">链</th>
+                                        <th style="min-width: 80px; cursor: pointer;" onclick="sortConnections('network')">
+                                            协议 <span class="sort-arrow" id="sort-network"></span>
+                                        </th>
+                                        <th style="min-width: 120px; cursor: pointer;" onclick="sortConnections('source')">
+                                            源地址 <span class="sort-arrow" id="sort-source"></span>
+                                        </th>
+                                        <th style="min-width: 150px; cursor: pointer;" onclick="sortConnections('destination')">
+                                            目标地址 <span class="sort-arrow" id="sort-destination"></span>
+                                        </th>
+                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('proxy')">
+                                            策略/代理 <span class="sort-arrow" id="sort-proxy"></span>
+                                        </th>
+                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('upload')">
+                                            上行 <span class="sort-arrow" id="sort-upload"></span>
+                                        </th>
+                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('download')">
+                                            下行 <span class="sort-arrow" id="sort-download"></span>
+                                        </th>
+                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('chains')">
+                                            链 <span class="sort-arrow" id="sort-chains"></span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody id="connectionsTable">
@@ -1256,6 +1270,14 @@
         let currentRuleSort = 'default';
         let proxyGroupModal = null;
         let ruleModal = null;
+        
+        // 连接列表排序状态
+        let connectionSortField = null;
+        let connectionSortAsc = true;
+        
+        // 流量速率计算所需变量
+        let lastTrafficData = { up: 0, down: 0, time: 0 };
+        let currentConnections = [];
         
         // 全局清理函数 - 页面卸载前执行，防止刷新后定时器/事件叠加
         function cleanupAll() {
@@ -2106,7 +2128,6 @@
         // 流量监控功能
         let trafficAutoRefreshEnabled = true;
         let trafficRefreshInterval = null;
-        let currentConnections = [];
         
         function formatBytes(bytes) {
             if (bytes === 0) return '0 B';
@@ -2114,6 +2135,24 @@
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function sortConnections(field) {
+            if (connectionSortField === field) {
+                connectionSortAsc = !connectionSortAsc;
+            } else {
+                connectionSortField = field;
+                connectionSortAsc = true;
+            }
+            
+            // 更新排序箭头显示
+            document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+            const arrowSpan = document.getElementById('sort-' + field);
+            if (arrowSpan) {
+                arrowSpan.textContent = connectionSortAsc ? ' ↑' : ' ↓';
+            }
+            
+            renderConnections();
         }
         
         async function loadTraffic() {
@@ -2124,9 +2163,28 @@
                     const { traffic, connections } = data.data;
                     currentConnections = connections;
                     
+                    // 计算速率：使用两次刷新间的差值
+                    const currentTime = Date.now();
+                    let upRate = 0;
+                    let downRate = 0;
+                    
+                    if (lastTrafficData.time > 0 && lastTrafficData.time < currentTime) {
+                        const timeDiff = (currentTime - lastTrafficData.time) / 1000;
+                        if (timeDiff > 0) {
+                            upRate = (traffic.up - lastTrafficData.up) / timeDiff;
+                            downRate = (traffic.down - lastTrafficData.down) / timeDiff;
+                            // 防止负数
+                            upRate = Math.max(0, upRate);
+                            downRate = Math.max(0, downRate);
+                        }
+                    }
+                    
+                    // 更新最后一次数据
+                    lastTrafficData = { up: traffic.up, down: traffic.down, time: currentTime };
+                    
                     // 更新流量统计
-                    document.getElementById('upSpeed').textContent = formatBytes(traffic.up || 0) + '/s';
-                    document.getElementById('downSpeed').textContent = formatBytes(traffic.down || 0) + '/s';
+                    document.getElementById('upSpeed').textContent = formatBytes(upRate) + '/s';
+                    document.getElementById('downSpeed').textContent = formatBytes(downRate) + '/s';
                     document.getElementById('connectionCount').textContent = connections.length;
                     
                     // 统计活跃代理
@@ -2150,12 +2208,61 @@
             const tableBody = document.getElementById('connectionsTable');
             const searchTerm = (document.getElementById('connectionSearch')?.value || '').toLowerCase();
             
-            let connections = currentConnections;
+            let connections = [...currentConnections];
             if (searchTerm) {
                 connections = connections.filter(conn => {
                     return (conn.metadata?.host || '').toLowerCase().includes(searchTerm) ||
                            (conn.metadata?.sourceIP || '').toLowerCase().includes(searchTerm) ||
                            (conn.chains || []).join(' ').toLowerCase().includes(searchTerm);
+                });
+            }
+            
+            // 排序功能
+            if (connectionSortField) {
+                connections.sort((a, b) => {
+                    let aVal, bVal;
+                    const metadataA = a.metadata || {};
+                    const metadataB = b.metadata || {};
+                    const chainsA = a.chains || [];
+                    const chainsB = b.chains || [];
+                    
+                    switch (connectionSortField) {
+                        case 'network':
+                            aVal = metadataA.network || '';
+                            bVal = metadataB.network || '';
+                            break;
+                        case 'source':
+                            aVal = `${metadataA.sourceIP || ''}:${metadataA.sourcePort || ''}`;
+                            bVal = `${metadataB.sourceIP || ''}:${metadataB.sourcePort || ''}`;
+                            break;
+                        case 'destination':
+                            aVal = `${metadataA.host || metadataA.destinationIP || ''}:${metadataA.destinationPort || ''}`;
+                            bVal = `${metadataB.host || metadataB.destinationIP || ''}:${metadataB.destinationPort || ''}`;
+                            break;
+                        case 'proxy':
+                            aVal = chainsA.length > 0 ? chainsA[chainsA.length - 1] : '';
+                            bVal = chainsB.length > 0 ? chainsB[chainsB.length - 1] : '';
+                            break;
+                        case 'upload':
+                            aVal = a.upload || 0;
+                            bVal = b.upload || 0;
+                            return connectionSortAsc ? (aVal - bVal) : (bVal - aVal);
+                        case 'download':
+                            aVal = a.download || 0;
+                            bVal = b.download || 0;
+                            return connectionSortAsc ? (aVal - bVal) : (bVal - aVal);
+                        case 'chains':
+                            aVal = chainsA.join(' → ');
+                            bVal = chainsB.join(' → ');
+                            break;
+                        default:
+                            aVal = '';
+                            bVal = '';
+                    }
+                    
+                    // 字符串排序
+                    const strCompare = aVal.localeCompare(bVal);
+                    return connectionSortAsc ? strCompare : -strCompare;
                 });
             }
             
