@@ -2486,6 +2486,8 @@
             return group ? group.now : groupName;
         }
 
+        let expandedGroups = new Set();
+        
         function renderRuleFlow() {
             const container = document.getElementById('ruleFlowContainer');
             const rules = config.rules || [];
@@ -2501,93 +2503,191 @@
             }
 
             let html = `
-                <div class="rule-flow-container">
+                <div class="horizontal-flow-container">
                     <style>
+                        .horizontal-flow-container {
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 2rem;
+                            min-height: 500px;
+                            overflow-x: auto;
+                            padding: 2rem;
+                        }
+                        .flow-column {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 1rem;
+                            min-width: 220px;
+                        }
+                        .flow-column.center {
+                            min-width: 300px;
+                        }
                         .flow-node {
-                            padding: 1rem 1.5rem;
+                            padding: 1rem 1.25rem;
                             border-radius: 0.75rem;
-                            margin: 0.5rem 0;
-                            position: relative;
-                            transition: all 0.2s ease;
-                            cursor: pointer;
-                        }
-                        .flow-node:hover {
-                            transform: translateX(5px);
-                        }
-                        .flow-start {
-                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-                            color: white;
                             text-align: center;
                             font-weight: 600;
+                            transition: all 0.3s ease;
+                            position: relative;
+                        }
+                        .flow-node:hover {
+                            transform: scale(1.02);
+                            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                        }
+                        .flow-node.clickable {
+                            cursor: pointer;
+                        }
+                        .flow-request {
+                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                            color: white;
+                            font-size: 1.1rem;
                         }
                         .flow-rule {
                             background: white;
-                            border: 2px solid #e2e8f0;
-                            border-left: 4px solid #6366f1;
+                            border: 3px solid #e2e8f0;
+                            border-left: 5px solid #6366f1;
                         }
-                        .flow-rule:hover {
-                            border-color: #6366f1;
-                            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
-                        }
-                        .flow-policy {
-                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        .flow-rule .rule-index {
+                            position: absolute;
+                            top: -0.75rem;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: #6366f1;
                             color: white;
+                            width: 1.75rem;
+                            height: 1.75rem;
+                            border-radius: 50%;
                             display: flex;
-                            justify-content: space-between;
                             align-items: center;
+                            justify-content: center;
+                            font-size: 0.875rem;
+                            font-weight: 700;
                         }
-                        .flow-end {
-                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-                            color: white;
-                            text-align: center;
-                            font-weight: 600;
-                        }
-                        .flow-arrow {
-                            text-align: center;
-                            color: #94a3b8;
-                            font-size: 1.5rem;
-                            margin: 0.25rem 0;
-                        }
-                        .rule-type {
+                        .flow-rule .rule-type {
                             display: inline-block;
-                            padding: 0.25rem 0.5rem;
+                            padding: 0.25rem 0.75rem;
                             background: #e0e7ff;
                             color: #4338ca;
-                            border-radius: 0.375rem;
-                            font-size: 0.75rem;
-                            font-weight: 600;
-                            margin-right: 0.5rem;
-                        }
-                        .rule-value {
-                            font-family: 'JetBrains Mono', monospace;
-                            background: #f1f5f9;
-                            padding: 0.25rem 0.5rem;
-                            border-radius: 0.25rem;
-                            font-size: 0.875rem;
-                        }
-                        .policy-badge {
-                            background: rgba(255,255,255,0.2);
-                            padding: 0.25rem 0.75rem;
                             border-radius: 2rem;
-                            font-size: 0.875rem;
+                            font-size: 0.7rem;
+                            font-weight: 700;
+                            margin-bottom: 0.5rem;
                         }
-                        .edit-btn {
+                        .flow-rule .rule-content {
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 0.8rem;
+                            background: #f1f5f9;
+                            padding: 0.5rem;
+                            border-radius: 0.375rem;
+                            word-break: break-all;
+                            margin-top: 0.5rem;
+                        }
+                        .flow-rule .rule-target {
+                            margin-top: 0.5rem;
+                            font-size: 0.85rem;
+                            color: #10b981;
+                        }
+                        .flow-group {
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                        }
+                        .flow-group.collapsible {
+                            cursor: pointer;
+                        }
+                        .flow-group.collapsible:hover {
+                            transform: scale(1.02);
+                        }
+                        .flow-group .group-type {
+                            font-size: 0.7rem;
+                            opacity: 0.9;
+                            margin-top: 0.25rem;
+                        }
+                        .flow-proxy {
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            color: white;
+                        }
+                        .flow-proxy.direct {
+                            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+                        }
+                        .flow-end {
+                            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+                            color: white;
+                        }
+                        .flow-connector {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            min-width: 80px;
+                        }
+                        .connector-arrow {
+                            font-size: 2rem;
+                            color: #94a3b8;
+                        }
+                        .connector-label {
+                            font-size: 0.75rem;
+                            color: #64748b;
+                            margin-top: 0.25rem;
+                        }
+                        .connector-label.match {
+                            color: #10b981;
+                            font-weight: 600;
+                        }
+                        .connector-label.miss {
+                            color: #f59e0b;
+                            font-weight: 600;
+                        }
+                        .group-tree {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 0.5rem;
+                        }
+                        .tree-indent {
+                            margin-left: 1.5rem;
+                            border-left: 2px dashed #cbd5e1;
+                            padding-left: 1rem;
+                        }
+                        .tree-toggle {
+                            position: absolute;
+                            top: 0.5rem;
+                            right: 0.5rem;
                             background: rgba(255,255,255,0.2);
                             border: none;
                             color: white;
-                            padding: 0.25rem 0.75rem;
-                            border-radius: 0.375rem;
+                            width: 1.5rem;
+                            height: 1.5rem;
+                            border-radius: 50%;
                             cursor: pointer;
-                            transition: all 0.2s ease;
+                            font-size: 0.875rem;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
                         }
-                        .edit-btn:hover {
+                        .tree-toggle:hover {
                             background: rgba(255,255,255,0.3);
+                        }
+                        .node-icon {
+                            font-size: 1.5rem;
+                            margin-bottom: 0.5rem;
+                        }
+                        .node-title {
+                            font-size: 0.9rem;
+                            line-height: 1.3;
                         }
                     </style>
                     
-                    <div class="flow-node flow-start">
-                        <i class="bi bi-play-circle me-2"></i>流量进入
+                    <div class="flow-column">
+                        <div class="flow-node flow-request">
+                            <div class="node-icon"><i class="bi bi-globe"></i></div>
+                            <div class="node-title">Request</div>
+                        </div>
                     </div>
+                    
+                    <div class="flow-connector">
+                        <div class="connector-arrow"><i class="bi bi-arrow-right"></i></div>
+                    </div>
+                    
+                    <div class="flow-column center">
             `;
 
             rules.forEach((rule, index) => {
@@ -2604,33 +2704,55 @@
                     ruleValue = JSON.stringify(rule);
                     policy = '';
                 }
-
-                const currentNode = getProxyGroupCurrent(policy);
+                
+                const isLastRule = index === rules.length - 1;
                 
                 html += `
-                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
-                    <div class="flow-node flow-rule" data-rule-index="${index}">
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                            <span class="rule-type">${escapeHtml(ruleType)}</span>
-                            ${ruleValue ? `<span class="rule-value">${escapeHtml(ruleValue)}</span>` : ''}
-                            ${params ? `<span class="text-muted small ms-2">${escapeHtml(params)}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
-                    <div class="flow-node flow-policy">
-                        <div>
-                            <i class="bi bi-signpost-2 me-2"></i>
-                            <strong>策略:</strong> <span class="policy-badge">${escapeHtml(policy)}</span>
-                            ${currentNode !== policy ? `<span class="ms-2"><i class="bi bi-arrow-right"></i> <span class="policy-badge">${escapeHtml(currentNode)}</span></span>` : ''}
-                        </div>
+                    <div class="flow-node flow-rule clickable" data-rule-index="${index}">
+                        <div class="rule-index">${index + 1}</div>
+                        <div class="rule-type">${escapeHtml(ruleType)}</div>
+                        <div class="node-title">${escapeHtml(ruleValue || '')}</div>
+                        ${params ? `<div class="text-muted small" style="font-size: 0.75rem; margin-top: 0.25rem;">${escapeHtml(params)}</div>` : ''}
+                        <div class="rule-target">→ ${escapeHtml(policy)}</div>
                     </div>
                 `;
+                
+                if (!isLastRule) {
+                    html += `
+                        <div class="flow-connector" style="min-height: 30px;">
+                            <div class="connector-label miss">未命中 ↓</div>
+                        </div>
+                    `;
+                }
             });
 
             html += `
-                    <div class="flow-arrow"><i class="bi bi-arrow-down"></i></div>
-                    <div class="flow-node flow-end">
-                        <i class="bi bi-check-circle me-2"></i>完成路由
+                    </div>
+                    
+                    <div class="flow-connector">
+                        <div class="connector-arrow"><i class="bi bi-arrow-right"></i></div>
+                        <div class="connector-label match">命中</div>
+                    </div>
+                    
+                    <div class="flow-column">
+            `;
+
+            const targets = new Set();
+            rules.forEach((rule) => {
+                let policy;
+                if (typeof rule === 'string') {
+                    policy = rule.split(',')[2] || '';
+                }
+                if (policy) {
+                    targets.add(policy);
+                }
+            });
+
+            targets.forEach((target) => {
+                html += renderTargetNode(target, 0);
+            });
+
+            html += `
                     </div>
                 </div>
             `;
@@ -2638,11 +2760,85 @@
             container.innerHTML = html;
         }
 
+        function renderTargetNode(target, depth) {
+            const isProxyGroup = config['proxy-groups']?.some(g => g.name === target);
+            const isProxy = config.proxies?.some(p => p.name === target);
+            const isDirect = target === 'DIRECT';
+            const isReject = target === 'REJECT';
+            
+            let html = '';
+            
+            if (isProxyGroup) {
+                const group = config['proxy-groups']?.find(g => g.name === target);
+                const groupType = group?.type || 'select';
+                const isExpanded = expandedGroups.has(target);
+                const children = group?.proxies || [];
+                
+                html += `
+                    <div class="flow-node flow-group collapsible" onclick="toggleGroup('${escapeHtml(target)}')">
+                        ${children.length > 0 ? `<button class="tree-toggle" onclick="event.stopPropagation(); toggleGroup('${escapeHtml(target)}')">${isExpanded ? '−' : '+'}</button>` : ''}
+                        <div class="node-icon"><i class="bi bi-signpost-2"></i></div>
+                        <div class="node-title">${escapeHtml(target)}</div>
+                        <div class="group-type">${escapeHtml(groupType)}</div>
+                    </div>
+                `;
+                
+                if (isExpanded && children.length > 0) {
+                    html += `<div class="tree-indent">`;
+                    children.forEach((child) => {
+                        html += renderTargetNode(child, depth + 1);
+                    });
+                    html += `</div>`;
+                }
+            } else if (isDirect) {
+                html += `
+                    <div class="flow-node flow-proxy direct">
+                        <div class="node-icon"><i class="bi bi-rocket"></i></div>
+                        <div class="node-title">DIRECT</div>
+                    </div>
+                `;
+            } else if (isReject) {
+                html += `
+                    <div class="flow-node flow-proxy">
+                        <div class="node-icon"><i class="bi bi-x-circle"></i></div>
+                        <div class="node-title">REJECT</div>
+                    </div>
+                `;
+            } else if (isProxy) {
+                const proxy = config.proxies?.find(p => p.name === target);
+                html += `
+                    <div class="flow-node flow-proxy">
+                        <div class="node-icon"><i class="bi bi-hdd-network"></i></div>
+                        <div class="node-title">${escapeHtml(target)}</div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="flow-node flow-proxy">
+                        <div class="node-icon"><i class="bi bi-question-circle"></i></div>
+                        <div class="node-title">${escapeHtml(target)}</div>
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+
+        function toggleGroup(groupName) {
+            if (expandedGroups.has(groupName)) {
+                expandedGroups.delete(groupName);
+            } else {
+                expandedGroups.add(groupName);
+            }
+            renderRuleFlow();
+        }
+
         // 刷新规则流程图按钮
         const refreshRuleFlowBtn = document.getElementById('refreshRuleFlowBtn');
         if (refreshRuleFlowBtn) {
             refreshRuleFlowBtn.addEventListener('click', () => {
                 loadRuntimeProxyGroups();
+                renderRuleFlow();
             });
         }
 
