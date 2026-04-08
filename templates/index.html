@@ -1,1 +1,2719 @@
-INLINE_HTML_PLACEHOLDER
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mihomo WebUI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --sidebar-bg: #0f172a;
+            --sidebar-hover: #1e293b;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: #f1f5f9;
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            color: #e2e8f0;
+            z-index: 1000;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+        }
+        .sidebar-brand h4 {
+            margin: 0;
+            font-weight: 700;
+            color: white;
+        }
+        .sidebar-nav {
+            padding: 1rem 0;
+            flex: 1;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            margin: 0.15rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .sidebar-link:hover {
+            color: white;
+            background: var(--sidebar-hover);
+        }
+        .sidebar-link.active {
+            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .sidebar-link i {
+            width: 20px;
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+        .text-purple {
+            color: #8b5cf6;
+        }
+        .text-green {
+            color: #10b981;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .content-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .top-nav {
+            background: var(--card-bg);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .card-header {
+            background: var(--card-bg);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1.25rem 1.5rem;
+        }
+        .card-body { padding: 1.5rem; }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.info { background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card .icon {
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .editor-container {
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+        #rawConfigEditor {
+            height: 100%;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+        }
+        .status-bar {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #334155;
+        }
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2rem;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.running {
+            background: #22c55e;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .status-item i { font-size: 1rem; }
+            padding: 1rem;
+        }
+        #rawConfigEditor:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+        }
+        .proxy-group-item, .rule-item {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .proxy-group-item:last-child, .rule-item:last-child { border-bottom: none; }
+        .proxy-group-item:hover, .rule-item:hover {
+            background-color: #f8fafc;
+        }
+        .btn-action {
+            opacity: 0;
+            transition: all 0.2s ease;
+        }
+        .proxy-group-item:hover .btn-action,
+        .rule-item:hover .btn-action {
+            opacity: 1;
+        }
+        .badge-type {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.6rem;
+            font-weight: 600;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input {
+            padding-left: 2.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .search-box i {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
+        .list-group-item {
+            padding: 1rem 1.25rem;
+            border: none;
+        }
+        .quick-action-btn {
+            transition: all 0.2s ease;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            height: 100%;
+        }
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        .config-form .row {
+            margin-bottom: 1rem;
+        }
+        .config-form label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .config-form .form-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .form-switch {
+            padding-left: 2.5rem;
+        }
+        .form-switch .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+            margin-left: -2.5rem;
+        }
+        .nav-pills .nav-link {
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .nav-pills .nav-link.active {
+            background: var(--primary);
+        }
+        .config-category {
+            margin-bottom: 2rem;
+        }
+        .config-category h6 {
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-hurricane me-2"></i>Mihomo</h4>
+        </div>
+        <nav class="sidebar-nav">
+            <a class="sidebar-link active" data-section="dashboard">
+                <i class="bi bi-speedometer2"></i><span>仪表盘</span>
+            </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">配置管理</small>
+            </div>
+            <a class="sidebar-link" data-section="basic">
+                <i class="bi bi-gear"></i><span>基本设置</span>
+            </a>
+            <a class="sidebar-link" data-section="controller">
+                <i class="bi bi-plug"></i><span>外部控制</span>
+            </a>
+            <a class="sidebar-link" data-section="tun">
+                <i class="bi bi-hdd-network"></i><span>TUN 设置</span>
+            </a>
+            <a class="sidebar-link" data-section="dns">
+                <i class="bi bi-globe"></i><span>DNS 设置</span>
+            </a>
+            <a class="sidebar-link" data-section="sniffer">
+                <i class="bi bi-search"></i><span>嗅探设置</span>
+            </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">策略规则</small>
+            </div>
+            <a class="sidebar-link" data-section="proxy-groups">
+                <i class="bi bi-diagram-3"></i><span>代理组配置</span>
+            </a>
+            <a class="sidebar-link" data-section="proxy-nodes">
+                <i class="bi bi-node-plus"></i><span>节点选择</span>
+            </a>
+            <a class="sidebar-link" data-section="rules">
+                <i class="bi bi-list-check"></i><span>规则</span>
+            </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">系统监控</small>
+            </div>
+            <a class="sidebar-link" data-section="status">
+                <i class="bi bi-display"></i><span>状态监控</span>
+            </a>
+            <a class="sidebar-link" data-section="traffic">
+                <i class="bi bi-speedometer2"></i><span>流量监控</span>
+            </a>
+            <a class="sidebar-link" data-section="logs">
+                <i class="bi bi-journal-text"></i><span>日志查看</span>
+            </a>
+            <a class="sidebar-link" data-section="rule-flow">
+                <i class="bi bi-flowchart"></i><span>规则流程图</span>
+            </a>
+            <div class="px-3 py-2">
+                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.05em;">其他</small>
+            </div>
+            <a class="sidebar-link" data-section="raw-editor">
+                <i class="bi bi-code-slash"></i><span>原始编辑器</span>
+            </a>
+        </nav>
+        <div class="p-3">
+            <button class="btn btn-outline-light w-100" id="restartServiceBtn">
+                <i class="bi bi-arrow-repeat me-2"></i>重启服务
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="status-bar">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-4 flex-wrap">
+                    <div class="status-indicator">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">检查中...</span>
+                    </div>
+                    <div class="status-item" id="statusPid" style="display: none;">
+                        <i class="bi bi-cpu"></i>
+                        <span>PID: <span id="pidValue">-</span></span>
+                    </div>
+                    <div class="status-item" id="statusCpu" style="display: none;">
+                        <i class="bi bi-activity"></i>
+                        <span>CPU: <span id="cpuValue">-</span>%</span>
+                    </div>
+                    <div class="status-item" id="statusMemory" style="display: none;">
+                        <i class="bi bi-memory"></i>
+                        <span>内存: <span id="memoryValue">-</span>%</span>
+                    </div>
+                    <div class="status-item" id="statusPorts" style="display: none;">
+                        <i class="bi bi-diagram-2"></i>
+                        <span>端口: <span id="portsValue">-</span></span>
+                    </div>
+                    <div class="status-item" id="statusUptime" style="display: none;">
+                        <i class="bi bi-clock-history"></i>
+                        <span>启动: <span id="uptimeValue">-</span></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="small text-muted">自动刷新:</span>
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle" checked>
+                        <label class="form-check-label text-muted" for="autoRefreshToggle">3秒</label>
+                    </div>
+                    <button class="btn btn-outline-light btn-sm" id="refreshStatusBtn">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="top-nav d-flex justify-content-between align-items-center">
+            <h5 class="mb-0" id="currentSectionTitle">仪表盘</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                </button>
+                <button class="btn btn-primary" id="saveAllBtn">
+                    <i class="bi bi-save me-1"></i> 保存全部
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <div class="content-section active" id="section-dashboard">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="icon"><i class="bi bi-gear"></i></div>
+                            <div class="mb-1 opacity-75">配置项</div>
+                            <h2 class="mb-0" id="configCount">-</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card success">
+                            <div class="icon"><i class="bi bi-diagram-3"></i></div>
+                            <div class="mb-1 opacity-75">代理组</div>
+                            <h2 class="mb-0" id="proxyGroupCount">-</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card info">
+                            <div class="icon"><i class="bi bi-list-check"></i></div>
+                            <div class="mb-1 opacity-75">规则</div>
+                            <h2 class="mb-0" id="ruleCount">-</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card warning">
+                            <div class="icon"><i class="bi bi-box"></i></div>
+                            <div class="mb-1 opacity-75">规则提供</div>
+                            <h2 class="mb-0" id="ruleProviderCount">-</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">快捷操作</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-primary w-100 quick-action-btn" data-goto="basic">
+                                    <i class="bi bi-gear fs-4 d-block mb-2"></i>
+                                    基本设置
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-success w-100 quick-action-btn" data-goto="proxy-groups">
+                                    <i class="bi bi-diagram-3 fs-4 d-block mb-2"></i>
+                                    管理代理组
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-info w-100 quick-action-btn" data-goto="rules">
+                                    <i class="bi bi-list-check fs-4 d-block mb-2"></i>
+                                    管理规则
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-warning w-100 quick-action-btn" id="quickRestartBtn">
+                                    <i class="bi bi-arrow-repeat fs-4 d-block mb-2"></i>
+                                    重启服务
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-basic">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">基本设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>端口设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">混合端口 (mixed-port)</label>
+                                    <input type="number" class="form-control" id="config-mixed-port" placeholder="7890">
+                                    <div class="form-text">HTTP/HTTPS/SOCKS5 混合代理端口</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">重定向端口 (redir-port)</label>
+                                    <input type="number" class="form-control" id="config-redir-port" placeholder="7892">
+                                    <div class="form-text">Linux/macOS 的透明代理端口</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>网络设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-allow-lan">
+                                        <label class="form-check-label" for="config-allow-lan">允许局域网连接 (allow-lan)</label>
+                                    </div>
+                                    <div class="form-text">允许局域网内其他设备连接</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-ipv6">
+                                        <label class="form-check-label" for="config-ipv6">启用 IPv6</label>
+                                    </div>
+                                    <div class="form-text">开启 IPv6 支持</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>运行模式</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">规则模式 (mode)</label>
+                                    <select class="form-select" id="config-mode">
+                                        <option value="Rule">Rule - 规则模式</option>
+                                        <option value="Global">Global - 全局代理</option>
+                                        <option value="Direct">Direct - 全局直连</option>
+                                    </select>
+                                    <div class="form-text">选择流量处理模式</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">日志级别 (log-level)</label>
+                                    <select class="form-select" id="config-log-level">
+                                        <option value="silent">silent - 静默</option>
+                                        <option value="error">error - 错误</option>
+                                        <option value="warning">warning - 警告</option>
+                                        <option value="info">info - 信息</option>
+                                        <option value="debug">debug - 调试</option>
+                                    </select>
+                                    <div class="form-text">日志输出详细程度</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>Profile 设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-profile-store-selected">
+                                        <label class="form-check-label" for="config-profile-store-selected">保存选择 (store-selected)</label>
+                                    </div>
+                                    <div class="form-text">记住上次选择的节点和策略组</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-profile-store-fake-ip">
+                                        <label class="form-check-label" for="config-profile-store-fake-ip">保存 Fake-IP (store-fake-ip)</label>
+                                    </div>
+                                    <div class="form-text">保存 Fake-IP 映射以加快 DNS 命中</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-controller">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">外部控制设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>RESTful API</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">监听地址 (external-controller)</label>
+                                    <input type="text" class="form-control" id="config-external-controller" placeholder="0.0.0.0:9090">
+                                    <div class="form-text">Clash RESTful API 监听地址</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">API 口令 (secret)</label>
+                                    <input type="text" class="form-control" id="config-secret" placeholder="123456">
+                                    <div class="form-text">RESTful API 认证口令</div>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">外部 UI 目录 (external-ui)</label>
+                                    <input type="text" class="form-control" id="config-external-ui" placeholder="dashboard">
+                                    <div class="form-text">静态网页资源目录（可选）</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-tun">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">TUN 设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-enable">
+                                        <label class="form-check-label" for="config-tun-enable">启用 TUN</label>
+                                    </div>
+                                    <div class="form-text">启用 TUN 虚拟网卡模式</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">网络栈 (stack)</label>
+                                    <select class="form-select" id="config-tun-stack">
+                                        <option value="system">system - 系统栈</option>
+                                        <option value="gvisor">gvisor - 用户态栈</option>
+                                        <option value="mixed">mixed - 混合</option>
+                                    </select>
+                                    <div class="form-text">选择 TUN 网络栈类型</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>高级设置</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">DNS 劫持 (dns-hijack)</label>
+                                    <input type="text" class="form-control" id="config-tun-dns-hijack" placeholder="0.0.0.0:53">
+                                    <div class="form-text">劫持 DNS 请求（多个用逗号分隔）</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-detect-interface">
+                                        <label class="form-check-label" for="config-tun-auto-detect-interface">自动识别接口</label>
+                                    </div>
+                                    <div class="form-text">自动识别默认出口网络接口</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-route">
+                                        <label class="form-check-label" for="config-tun-auto-route">自动路由</label>
+                                    </div>
+                                    <div class="form-text">自动添加系统路由表</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-auto-redirect">
+                                        <label class="form-check-label" for="config-tun-auto-redirect">自动重定向</label>
+                                    </div>
+                                    <div class="form-text">自动将流量重定向至 TUN</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-strict-route">
+                                        <label class="form-check-label" for="config-tun-strict-route">严格路由</label>
+                                    </div>
+                                    <div class="form-text">启用严格路由模式</div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-tun-endpoint-independent-nat">
+                                        <label class="form-check-label" for="config-tun-endpoint-independent-nat">端点无关 NAT</label>
+                                    </div>
+                                    <div class="form-text">提高 NAT 类型兼容性，适用于 P2P 和游戏</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-dns">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">DNS 设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-enable">
+                                        <label class="form-check-label" for="config-dns-enable">启用 DNS</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-ipv6">
+                                        <label class="form-check-label" for="config-dns-ipv6">IPv6 DNS</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="config-dns-use-system-hosts">
+                                        <label class="form-check-label" for="config-dns-use-system-hosts">使用系统 Hosts</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-category">
+                            <h6>高级设置</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">监听地址 (listen)</label>
+                                    <input type="text" class="form-control" id="config-dns-listen" placeholder="0.0.0.0:53">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">增强模式 (enhanced-mode)</label>
+                                    <select class="form-select" id="config-dns-enhanced-mode">
+                                        <option value="fake-ip">fake-ip</option>
+                                        <option value="redir-host">redir-host</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Fake-IP 范围 (fake-ip-range)</label>
+                                    <input type="text" class="form-control" id="config-dns-fake-ip-range" placeholder="198.18.0.1/16">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-sniffer">
+                <div class="card config-form">
+                    <div class="card-header">
+                        <h5 class="mb-0">嗅探设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="config-category">
+                            <h6>基本设置</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-enable">
+                                        <label class="form-check-label" for="config-sniffer-enable">启用嗅探</label>
+                                    </div>
+                                    <div class="form-text">提升分流准确性</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-override-destination">
+                                        <label class="form-check-label" for="config-sniffer-override-destination">覆盖目标地址</label>
+                                    </div>
+                                    <div class="form-text">使用嗅探到的域名覆盖原始目标地址</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-parse-pure-ip">
+                                        <label class="form-check-label" for="config-sniffer-parse-pure-ip">解析纯 IP</label>
+                                    </div>
+                                    <div class="form-text">尝试反向解析获得域名</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="config-sniffer-force-dns-mapping">
+                                        <label class="form-check-label" for="config-sniffer-force-dns-mapping">强制 DNS 映射</label>
+                                    </div>
+                                    <div class="form-text">对纯 IP 连接尝试 DNS 映射</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-proxy-groups">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0">代理组</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="proxyGroupsConfigSearch" placeholder="搜索代理组...">
+                            </div>
+                            <button class="btn btn-primary" id="addProxyGroupBtn">
+                                <i class="bi bi-plus me-1"></i> 添加代理组
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="proxyGroupsList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-rules">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0">规则</h5>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="ruleSearch" placeholder="搜索规则...">
+                            </div>
+                            <select class="form-select" style="width: auto;" id="ruleSortSelect">
+                                <option value="default">默认顺序</option>
+                                <option value="newest">最新添加在前</option>
+                                <option value="oldest">最早添加在前</option>
+                                <option value="type-asc">按类型 ↑</option>
+                                <option value="type-desc">按类型 ↓</option>
+                                <option value="policy-asc">按策略 ↑</option>
+                                <option value="policy-desc">按策略 ↓</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" id="resetRuleOrderBtn">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> 重置顺序
+                            </button>
+                            <button class="btn btn-primary" id="addRuleBtn">
+                                <i class="bi bi-plus me-1"></i> 添加规则
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="rulesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-proxy-nodes">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-node-plus me-2"></i>代理组节点选择</h5>
+                        <div class="d-flex gap-2">
+                            <div class="search-box">
+                                <i class="bi bi-search"></i>
+                                <input type="text" class="form-control" id="proxyGroupSearch" placeholder="搜索代理组...">
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshProxyGroupsBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="proxyNodesList">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-status">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-hurricane me-2"></i>进程状态</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-4">
+                                    <span class="status-dot me-2" id="detailStatusDot"></span>
+                                    <h4 class="mb-0" id="detailStatusText">检查中...</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-cpu me-2"></i>PID</span>
+                                            <strong id="detailPid">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-activity me-2"></i>CPU</span>
+                                            <strong id="detailCpu">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-memory me-2"></i>内存</span>
+                                            <strong id="detailMemory">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-clock-history me-2"></i>启动时间</span>
+                                            <strong id="detailUptime">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <label class="form-label fw-semibold"><i class="bi bi-terminal me-2"></i>命令行</label>
+                                    <div class="p-3 bg-dark text-light rounded font-monospace small" id="detailCommand">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-diagram-2 me-2"></i>Mihomo 运行信息</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>运行状态</h6>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-box-seam me-2"></i>版本</span>
+                                            <strong id="detailVersion">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-radar me-2"></i>运行模式</span>
+                                            <strong id="detailMode">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-globe me-2"></i>混合端口</span>
+                                            <strong id="detailMixedPort">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-router me-2"></i>局域网</span>
+                                            <strong id="detailAllowLan">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-wifi me-2"></i>TUN 模式</span>
+                                            <strong id="detailTunEnabled">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h6 class="mb-3"><i class="bi bi-plug me-2"></i>监听端口</h6>
+                                <div class="d-flex flex-wrap gap-2 mb-4" id="detailPorts">
+                                    <span class="text-muted">暂无端口</span>
+                                </div>
+                                
+                                <h6 class="mb-3"><i class="bi bi-gear me-2"></i>配置统计</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-list-check me-2"></i>代理组</span>
+                                            <strong id="detailProxyGroups">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-list-ol me-2"></i>规则数</span>
+                                            <strong id="detailRules">-</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                                            <span class="text-muted"><i class="bi bi-box me-2"></i>规则提供程序</span>
+                                            <strong id="detailRuleProviders">-</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock me-2"></i>实时监控</h5>
+                        <div class="d-flex gap-2 align-items-center">
+                            <span class="text-muted small">自动刷新:</span>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="detailAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="detailAutoRefreshToggle">3秒</label>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm" id="detailRefreshBtn">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center text-muted" id="monitoringPlaceholder">
+                            <i class="bi bi-graph-up" style="font-size: 3rem;"></i>
+                            <p class="mt-2">实时监控状态中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-traffic">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-up-circle" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">上行速率</h6>
+                                <h3 class="fw-bold mt-2" id="upSpeed">0 B/s</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-down-circle" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">下行速率</h6>
+                                <h3 class="fw-bold mt-2" id="downSpeed">0 B/s</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">当前连接</h6>
+                                <h3 class="fw-bold mt-2" id="connectionCount">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border: none; color: white;">
+                            <div class="card-body text-center">
+                                <i class="bi bi-collection" style="font-size: 2.5rem; opacity: 0.9;"></i>
+                                <h6 class="mt-2 mb-0 opacity-90">活跃代理</h6>
+                                <h3 class="fw-bold mt-2" id="activeProxies">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-ethernet me-2"></i>连接列表</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control" style="width: 200px;" id="connectionSearch" placeholder="搜索...">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="trafficAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="trafficAutoRefreshToggle">自动刷新</label>
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshTrafficBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="sticky-top bg-light" style="z-index: 10;">
+                                    <tr>
+                                        <th style="min-width: 80px;">协议</th>
+                                        <th style="min-width: 120px;">源地址</th>
+                                        <th style="min-width: 150px;">目标地址</th>
+                                        <th style="min-width: 100px;">策略/代理</th>
+                                        <th style="min-width: 100px;">上行</th>
+                                        <th style="min-width: 100px;">下行</th>
+                                        <th style="min-width: 100px;">链</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="connectionsTable">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
+                                            <p class="mt-2 mb-0">加载连接中...</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-logs">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-journal-text me-2"></i>Mihomo 日志</h5>
+                        <div class="d-flex gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="logsAutoRefreshToggle" checked>
+                                <label class="form-check-label text-muted" for="logsAutoRefreshToggle">自动刷新</label>
+                            </div>
+                            <button class="btn btn-outline-primary" id="refreshLogsBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                            <button class="btn btn-outline-secondary" id="clearLogsBtn">
+                                <i class="bi bi-eraser me-1"></i> 清空
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="p-3 bg-dark text-light" style="min-height: 500px; max-height: 70vh; overflow-y: auto; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px;" id="logsContainer">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载日志中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-rule-flow">
+                <div class="card">
+                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-flowchart me-2"></i>规则流程图</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary" id="refreshRuleFlowBtn">
+                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="ruleFlowContainer" style="min-height: 600px; background: #f8fafc; border-radius: 0.5rem; overflow: auto; padding: 2rem;">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem;"></i>
+                                <p class="mt-2">加载规则流程图中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-section" id="section-raw-editor">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">config.yaml</h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" id="loadRawConfigBtn">
+                                <i class="bi bi-download me-1"></i> 重新加载
+                            </button>
+                            <button class="btn btn-primary" id="saveRawConfigBtn">
+                                <i class="bi bi-save me-1"></i> 保存
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-3 editor-container">
+                        <textarea class="form-control" id="rawConfigEditor" spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="proxyGroupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="proxyGroupModalTitle">编辑代理组</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="proxyGroupForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">名称</label>
+                            <input type="text" class="form-control" id="proxyGroupName" required placeholder="例如: 代理选择">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">类型</label>
+                            <select class="form-select" id="proxyGroupType" required>
+                                <option value="select">select - 手动选择</option>
+                                <option value="url-test">url-test - 自动测速</option>
+                                <option value="fallback">fallback - 故障转移</option>
+                                <option value="load-balance">load-balance - 负载均衡</option>
+                                <option value="relay">relay - 中继</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">代理（每行一个）</label>
+                            <textarea class="form-control" id="proxyGroupProxies" rows="10" placeholder="例如:&#10;🇭🇰 香港节点&#10;🇯🇵 日本节点&#10;DIRECT"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveProxyGroupBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="ruleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ruleModalTitle">编辑规则</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ruleForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">规则类型</label>
+                            <select class="form-select" id="ruleType" required>
+                                <option value="DOMAIN">DOMAIN - 完整域名匹配</option>
+                                <option value="DOMAIN-SUFFIX">DOMAIN-SUFFIX - 域名后缀匹配</option>
+                                <option value="DOMAIN-KEYWORD">DOMAIN-KEYWORD - 域名关键词匹配</option>
+                                <option value="GEOSITE">GEOSITE - 地理站点</option>
+                                <option value="GEOIP">GEOIP - 地理IP</option>
+                                <option value="IP-CIDR">IP-CIDR - IPv4 CIDR</option>
+                                <option value="IP-CIDR6">IP-CIDR6 - IPv6 CIDR</option>
+                                <option value="SRC-IP-CIDR">SRC-IP-CIDR - 源IP CIDR</option>
+                                <option value="RULE-SET">RULE-SET - 规则集</option>
+                                <option value="MATCH">MATCH - 兜底匹配</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="ruleValueField">
+                            <label class="form-label fw-semibold">值</label>
+                            <input type="text" class="form-control" id="ruleValue" placeholder="例如: google.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">策略/代理组</label>
+                            <select class="form-select" id="rulePolicy" required>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">参数（可选）</label>
+                            <input type="text" class="form-control" id="ruleParams" placeholder="例如: no-resolve">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveRuleBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let config = {};
+        let rawConfig = '';
+        let editingProxyGroupIndex = -1;
+        let editingRuleIndex = -1;
+        let proxyGroupsConfigSearchTerm = '';
+        let proxyGroupSearchTerm = '';
+        let ruleSearchTerm = '';
+        let originalRules = [];
+        let currentRuleSort = 'default';
+        let proxyGroupModal = null;
+        let ruleModal = null;
+
+        const configFields = [
+            { id: 'mixed-port', type: 'number', path: ['mixed-port'] },
+            { id: 'redir-port', type: 'number', path: ['redir-port'] },
+            { id: 'allow-lan', type: 'checkbox', path: ['allow-lan'] },
+            { id: 'ipv6', type: 'checkbox', path: ['ipv6'] },
+            { id: 'mode', type: 'select', path: ['mode'] },
+            { id: 'log-level', type: 'select', path: ['log-level'] },
+            { id: 'external-controller', type: 'text', path: ['external-controller'] },
+            { id: 'secret', type: 'text', path: ['secret'] },
+            { id: 'external-ui', type: 'text', path: ['external-ui'] },
+            { id: 'profile-store-selected', type: 'checkbox', path: ['profile', 'store-selected'] },
+            { id: 'profile-store-fake-ip', type: 'checkbox', path: ['profile', 'store-fake-ip'] },
+            { id: 'tun-enable', type: 'checkbox', path: ['tun', 'enable'] },
+            { id: 'tun-stack', type: 'select', path: ['tun', 'stack'] },
+            { id: 'tun-dns-hijack', type: 'text', path: ['tun', 'dns-hijack'] },
+            { id: 'tun-auto-detect-interface', type: 'checkbox', path: ['tun', 'auto-detect-interface'] },
+            { id: 'tun-auto-route', type: 'checkbox', path: ['tun', 'auto-route'] },
+            { id: 'tun-auto-redirect', type: 'checkbox', path: ['tun', 'auto-redirect'] },
+            { id: 'tun-strict-route', type: 'checkbox', path: ['tun', 'strict-route'] },
+            { id: 'tun-endpoint-independent-nat', type: 'checkbox', path: ['tun', 'endpoint-independent-nat'] },
+            { id: 'dns-enable', type: 'checkbox', path: ['dns', 'enable'] },
+            { id: 'dns-ipv6', type: 'checkbox', path: ['dns', 'ipv6'] },
+            { id: 'dns-use-system-hosts', type: 'checkbox', path: ['dns', 'use-system-hosts'] },
+            { id: 'dns-listen', type: 'text', path: ['dns', 'listen'] },
+            { id: 'dns-enhanced-mode', type: 'select', path: ['dns', 'enhanced-mode'] },
+            { id: 'dns-fake-ip-range', type: 'text', path: ['dns', 'fake-ip-range'] },
+            { id: 'sniffer-enable', type: 'checkbox', path: ['sniffer', 'enable'] },
+            { id: 'sniffer-override-destination', type: 'checkbox', path: ['sniffer', 'override-destination'] },
+            { id: 'sniffer-parse-pure-ip', type: 'checkbox', path: ['sniffer', 'parse-pure-ip'] },
+            { id: 'sniffer-force-dns-mapping', type: 'checkbox', path: ['sniffer', 'force-dns-mapping'] },
+        ];
+
+        function getNestedValue(obj, path) {
+            let current = obj;
+            for (const key of path) {
+                if (current === undefined || current === null) return undefined;
+                current = current[key];
+            }
+            return current;
+        }
+
+        function setNestedValue(obj, path, value) {
+            let current = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i];
+                if (current[key] === undefined || current[key] === null) {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[path[path.length - 1]] = value;
+        }
+
+        function loadConfigToForm() {
+            for (const field of configFields) {
+                const value = getNestedValue(config, field.path);
+                const el = document.getElementById('config-' + field.id);
+                if (!el) continue;
+                
+                if (field.type === 'checkbox') {
+                    el.checked = value === true;
+                } else if (field.type === 'text' || field.type === 'number') {
+                    if (Array.isArray(value)) {
+                        el.value = value.join(', ');
+                    } else {
+                        el.value = value !== undefined && value !== null ? value : '';
+                    }
+                } else if (field.type === 'select') {
+                    el.value = value !== undefined && value !== null ? value : '';
+                }
+            }
+        }
+
+        function saveConfigFromForm() {
+            for (const field of configFields) {
+                const el = document.getElementById('config-' + field.id);
+                if (!el) continue;
+                
+                let value;
+                if (field.type === 'checkbox') {
+                    value = el.checked;
+                } else if (field.type === 'number') {
+                    value = el.value ? Number(el.value) : undefined;
+                } else if (field.type === 'text') {
+                    if (field.id === 'tun-dns-hijack' && el.value) {
+                        value = el.value.split(',').map(s => s.trim());
+                    } else {
+                        value = el.value || undefined;
+                    }
+                } else {
+                    value = el.value || undefined;
+                }
+                
+                if (value !== undefined) {
+                    setNestedValue(config, field.path, value);
+                }
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-warning';
+            
+            toastContainer.innerHTML += `
+                <div id="${toastId}" class="toast ${bgClass} text-white border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            const toast = new bootstrap.Toast(document.getElementById(toastId));
+            toast.show();
+            
+            setTimeout(() => {
+                const el = document.getElementById(toastId);
+                if (el) el.remove();
+            }, 5000);
+        }
+
+        function switchSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('section-' + sectionId).classList.add('active');
+            document.querySelector(`[data-section="${sectionId}"]`)?.classList.add('active');
+            
+            const titles = {
+                'dashboard': '仪表盘',
+                'basic': '基本设置',
+                'controller': '外部控制',
+                'tun': 'TUN 设置',
+                'dns': 'DNS 设置',
+                'sniffer': '嗅探设置',
+                'proxy-groups': '代理组配置',
+                'proxy-nodes': '节点选择',
+                'rules': '规则',
+                'rule-flow': '规则流程图',
+                'status': '状态监控',
+                'traffic': '流量监控',
+                'logs': '日志查看',
+                'raw-editor': '原始编辑器'
+            };
+            document.getElementById('currentSectionTitle').textContent = titles[sectionId] || '仪表盘';
+            
+            if (sectionId === 'rule-flow') {
+                renderRuleFlow();
+            } else if (sectionId === 'proxy-nodes') {
+                loadProxyGroups();
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                if (data.success) {
+                    config = data.config;
+                    // 保存原始规则顺序
+                    originalRules = [...(config.rules || [])];
+                    currentRuleSort = 'default';
+                    document.getElementById('ruleSortSelect').value = 'default';
+                    updateDashboard();
+                    loadConfigToForm();
+                    renderProxyGroups();
+                    renderRules();
+                    renderRuleFlow();
+                } else {
+                    showToast('加载失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadRawConfig() {
+            try {
+                const response = await fetch('/api/config/raw');
+                const data = await response.json();
+                if (data.success) {
+                    rawConfig = data.config;
+                    document.getElementById('rawConfigEditor').value = rawConfig;
+                } else {
+                    showToast('加载失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        async function saveRawConfig() {
+            try {
+                const content = document.getElementById('rawConfigEditor').value;
+                const response = await fetch('/api/config/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config: content })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    rawConfig = content;
+                    showToast(data.message);
+                    await loadConfig();
+                } else {
+                    showToast('保存失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        function updateDashboard() {
+            let configCount = 0;
+            for (const key in config) {
+                if (typeof config[key] === 'object' && config[key] !== null && !Array.isArray(config[key])) {
+                    configCount += Object.keys(config[key]).length;
+                } else {
+                    configCount++;
+                }
+            }
+            document.getElementById('configCount').textContent = configCount;
+            document.getElementById('proxyGroupCount').textContent = (config['proxy-groups'] || []).length;
+            document.getElementById('ruleCount').textContent = (config['rules'] || []).length;
+            document.getElementById('ruleProviderCount').textContent = Object.keys(config['rule-providers'] || {}).length;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderProxyGroups() {
+            const list = document.getElementById('proxyGroupsList');
+            const groups = (config['proxy-groups'] || []).filter(group => {
+                if (!proxyGroupsConfigSearchTerm) return true;
+                const term = proxyGroupsConfigSearchTerm.toLowerCase();
+                return group.name?.toLowerCase().includes(term) || 
+                       group.type?.toLowerCase().includes(term);
+            });
+            
+            if (groups.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>${proxyGroupsConfigSearchTerm ? '没有找到匹配的代理组' : '暂无代理组'}</h5>
+                        <p>点击上方按钮添加新的代理组</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = groups.map((group, displayIndex) => {
+                const originalIndex = (config['proxy-groups'] || []).indexOf(group);
+                return `
+                    <div class="list-group-item proxy-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-semibold">${escapeHtml(group.name)}</h6>
+                            <span class="badge badge-type bg-primary me-1">${escapeHtml(group.type)}</span>
+                            <small class="text-muted">${(group.proxies || []).length} 个代理</small>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="editProxyGroup(${originalIndex})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteProxyGroup(${originalIndex})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function parseRule(rule) {
+            if (typeof rule !== 'string') {
+                return { type: 'object', value: '', policy: '' };
+            }
+            const parts = rule.split(',');
+            return {
+                type: parts[0] || '',
+                value: parts[1] || '',
+                policy: parts[2] || ''
+            };
+        }
+
+        function sortRules(rules, sortType) {
+            const rulesCopy = [...rules];
+            switch (sortType) {
+                case 'newest':
+                    // 最新添加在前（当前顺序）
+                    return [...rulesCopy];
+                case 'oldest':
+                    // 最早添加在前（反转顺序）
+                    return [...rulesCopy].reverse();
+                case 'type-asc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pa.type.localeCompare(pb.type);
+                    });
+                case 'type-desc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pb.type.localeCompare(pa.type);
+                    });
+                case 'policy-asc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pa.policy.localeCompare(pb.policy);
+                    });
+                case 'policy-desc':
+                    return rulesCopy.sort((a, b) => {
+                        const pa = parseRule(a);
+                        const pb = parseRule(b);
+                        return pb.policy.localeCompare(pa.policy);
+                    });
+                case 'default':
+                default:
+                    return [...originalRules];
+            }
+        }
+
+        function renderRules() {
+            const list = document.getElementById('rulesList');
+            let rules = (config['rules'] || []);
+            if (currentRuleSort !== 'default') {
+                rules = sortRules(rules, currentRuleSort);
+            }
+            
+            rules = rules.filter((rule, index) => {
+                if (!ruleSearchTerm) return true;
+                const term = ruleSearchTerm.toLowerCase();
+                const ruleStr = typeof rule === 'string' ? rule : JSON.stringify(rule);
+                return ruleStr.toLowerCase().includes(term);
+            });
+            
+            if (rules.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>${ruleSearchTerm ? '没有找到匹配的规则' : '暂无规则'}</h5>
+                        <p>点击上方按钮添加新的规则</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = rules.map((rule, displayIndex) => {
+                const originalIndex = (config['rules'] || []).indexOf(rule);
+                let ruleText = '';
+                let ruleType = '';
+                if (typeof rule === 'string') {
+                    const parts = rule.split(',');
+                    ruleType = parts[0];
+                    ruleText = rule;
+                } else {
+                    ruleType = 'Object';
+                    ruleText = JSON.stringify(rule);
+                }
+                const isSorted = currentRuleSort !== 'default';
+                return `
+                    <div class="list-group-item rule-item d-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1 me-3">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                <span class="badge badge-type bg-info">${escapeHtml(ruleType)}</span>
+                                <code class="small text-truncate flex-grow-1" style="max-width: 600px;">${escapeHtml(ruleText)}</code>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, -1)" ${isSorted || originalIndex === 0 ? 'disabled' : ''}>
+                                <i class="bi bi-arrow-up"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary btn-action" onclick="moveRule(${originalIndex}, 1)" ${isSorted || originalIndex === (config['rules'] || []).length - 1 ? 'disabled' : ''}>
+                                <i class="bi bi-arrow-down"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="editRule(${originalIndex})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteRule(${originalIndex})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+
+        function editProxyGroup(index) {
+            editingProxyGroupIndex = index;
+            const group = config['proxy-groups'][index];
+            document.getElementById('proxyGroupModalTitle').textContent = '编辑代理组';
+            document.getElementById('proxyGroupName').value = group.name || '';
+            document.getElementById('proxyGroupType').value = group.type || 'select';
+            document.getElementById('proxyGroupProxies').value = (group.proxies || []).join('\n');
+            proxyGroupModal.show();
+        }
+
+
+
+        function deleteProxyGroup(index) {
+            if (confirm('确定要删除这个代理组吗？')) {
+                config['proxy-groups'].splice(index, 1);
+                saveAllConfig();
+            }
+        }
+
+        function populateRulePolicySelect(selectedValue = '') {
+            const select = document.getElementById('rulePolicy');
+            select.innerHTML = '';
+            
+            // 添加标准策略选项
+            const standardPolicies = ['DIRECT', 'REJECT', 'PASS'];
+            standardPolicies.forEach(policy => {
+                const option = document.createElement('option');
+                option.value = policy;
+                option.textContent = policy;
+                if (policy === selectedValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
+            // 添加代理组选项
+            const proxyGroups = config['proxy-groups'] || [];
+            if (proxyGroups.length > 0) {
+                const groupSeparator = document.createElement('option');
+                groupSeparator.disabled = true;
+                groupSeparator.textContent = '────────── 代理组 ──────────';
+                select.appendChild(groupSeparator);
+                
+                proxyGroups.forEach(group => {
+                    if (group.name) {
+                        const option = document.createElement('option');
+                        option.value = group.name;
+                        option.textContent = group.name;
+                        if (group.name === selectedValue) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    }
+                });
+            }
+        }
+
+
+
+        function editRule(index) {
+            editingRuleIndex = index;
+            const rule = config['rules'][index];
+            
+            document.getElementById('ruleModalTitle').textContent = '编辑规则';
+            
+            if (typeof rule === 'string') {
+                const parts = rule.split(',');
+                document.getElementById('ruleType').value = parts[0] || 'DOMAIN';
+                document.getElementById('ruleValue').value = parts[1] || '';
+                document.getElementById('ruleParams').value = parts.slice(3).join(',') || '';
+                document.getElementById('ruleValueField').style.display = parts[0] === 'MATCH' ? 'none' : 'block';
+                populateRulePolicySelect(parts[2] || '');
+            } else {
+                showToast('不支持编辑对象类型的规则', 'warning');
+            }
+            
+            ruleModal.show();
+        }
+
+
+
+        function deleteRule(index) {
+            if (confirm('确定要删除这个规则吗？')) {
+                config['rules'].splice(index, 1);
+                saveAllConfig();
+            }
+        }
+
+        function moveRule(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= config['rules'].length) return;
+            
+            [config['rules'][index], config['rules'][newIndex]] = 
+            [config['rules'][newIndex], config['rules'][index]];
+            
+            saveAllConfig();
+        }
+
+        async function saveAllConfig() {
+            try {
+                saveConfigFromForm();
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // 保存成功后更新原始规则顺序
+                    originalRules = [...(config.rules || [])];
+                    showToast(data.message);
+                    updateDashboard();
+                    renderProxyGroups();
+                    renderRules();
+                    renderRuleFlow();
+                } else {
+                    showToast('保存失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        async function restartService() {
+            if (!confirm('确定要重启 Mihomo 服务吗？')) return;
+            
+            try {
+                const response = await fetch('/api/restart', { method: 'POST' });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (error) {
+                showToast('重启失败: ' + error.message, 'error');
+            }
+        }
+
+
+
+        let autoRefreshInterval = null;
+        let autoRefreshEnabled = true;
+
+        async function updateStatus() {
+            try {
+                console.log('[updateStatus] 正在获取状态...');
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                console.log('[updateStatus] 收到数据:', data);
+                
+                if (data.success) {
+                    const status = data.status;
+                    
+                    // 更新顶部状态栏
+                    const statusDot = document.getElementById('statusDot');
+                    const statusText = document.getElementById('statusText');
+                    
+                    // 更新详细状态页面
+                    const detailStatusDot = document.getElementById('detailStatusDot');
+                    const detailStatusText = document.getElementById('detailStatusText');
+                    const detailVersion = document.getElementById('detailVersion');
+                    const detailMode = document.getElementById('detailMode');
+                    const detailMixedPort = document.getElementById('detailMixedPort');
+                    const detailAllowLan = document.getElementById('detailAllowLan');
+                    const detailTunEnabled = document.getElementById('detailTunEnabled');
+                    const detailPorts = document.getElementById('detailPorts');
+                    
+                    if (status.running) {
+                        // 顶部状态栏
+                        statusDot.classList.add('running');
+                        statusText.textContent = '运行中';
+                        
+                        document.getElementById('statusPid').style.display = 'inline-flex';
+                        document.getElementById('pidValue').textContent = status.pid;
+                        
+                        document.getElementById('statusCpu').style.display = 'inline-flex';
+                        document.getElementById('cpuValue').textContent = status.cpu;
+                        
+                        document.getElementById('statusMemory').style.display = 'inline-flex';
+                        document.getElementById('memoryValue').textContent = status.memory;
+                        
+                        document.getElementById('statusPorts').style.display = 'inline-flex';
+                        document.getElementById('portsValue').textContent = status.ports.length > 0 ? status.ports.join(', ') : '-';
+                        
+                        document.getElementById('statusUptime').style.display = 'inline-flex';
+                        document.getElementById('uptimeValue').textContent = status.uptime || '-';
+                        
+                        // 详细状态页面
+                        if (detailStatusDot) detailStatusDot.classList.add('running');
+                        if (detailStatusText) detailStatusText.textContent = '运行中';
+                        
+                        document.getElementById('detailPid').textContent = status.pid;
+                        document.getElementById('detailCpu').textContent = status.cpu + '%';
+                        document.getElementById('detailMemory').textContent = status.memory + '%';
+                        document.getElementById('detailUptime').textContent = status.uptime || '-';
+                        document.getElementById('detailCommand').textContent = status.command || '-';
+                        
+                        // 更新 Mihomo 运行信息
+                        if (detailVersion) detailVersion.textContent = status.version || '-';
+                        if (detailMode) detailMode.textContent = status.mode || '-';
+                        if (detailMixedPort) detailMixedPort.textContent = status.mixed_port || '-';
+                        if (detailAllowLan) {
+                            detailAllowLan.textContent = status.allow_lan ? '开启' : '关闭';
+                            detailAllowLan.className = status.allow_lan ? 'fw-bold text-success' : 'fw-bold text-muted';
+                        }
+                        if (detailTunEnabled) {
+                            detailTunEnabled.textContent = status.tun_enabled ? '开启' : '关闭';
+                            detailTunEnabled.className = status.tun_enabled ? 'fw-bold text-success' : 'fw-bold text-muted';
+                        }
+                        
+                        // 更新端口
+                        if (detailPorts) {
+                            if (status.ports.length > 0) {
+                                detailPorts.innerHTML = status.ports.map(port => 
+                                    `<span class="badge bg-primary">${port}</span>`
+                                ).join('');
+                            } else {
+                                detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
+                            }
+                        }
+                        
+                        // 更新配置信息
+                        document.getElementById('detailProxyGroups').textContent = 
+                            (config['proxy-groups'] || []).length + ' 个';
+                        document.getElementById('detailRules').textContent = 
+                            (config['rules'] || []).length + ' 个';
+                        document.getElementById('detailRuleProviders').textContent = 
+                            Object.keys(config['rule-providers'] || {}).length + ' 个';
+                    } else {
+                        // 顶部状态栏
+                        statusDot.classList.remove('running');
+                        statusText.textContent = '未运行';
+                        
+                        document.getElementById('statusPid').style.display = 'none';
+                        document.getElementById('statusCpu').style.display = 'none';
+                        document.getElementById('statusMemory').style.display = 'none';
+                        document.getElementById('statusPorts').style.display = 'none';
+                        document.getElementById('statusUptime').style.display = 'none';
+                        
+                        // 详细状态页面
+                        if (detailStatusDot) detailStatusDot.classList.remove('running');
+                        if (detailStatusText) detailStatusText.textContent = '未运行';
+                        
+                        document.getElementById('detailPid').textContent = '-';
+                        document.getElementById('detailCpu').textContent = '-';
+                        document.getElementById('detailMemory').textContent = '-';
+                        document.getElementById('detailUptime').textContent = '-';
+                        document.getElementById('detailCommand').textContent = '-';
+                        
+                        // 清空 Mihomo 运行信息
+                        if (detailVersion) detailVersion.textContent = '-';
+                        if (detailMode) detailMode.textContent = '-';
+                        if (detailMixedPort) detailMixedPort.textContent = '-';
+                        if (detailAllowLan) {
+                            detailAllowLan.textContent = '-';
+                            detailAllowLan.className = 'fw-bold';
+                        }
+                        if (detailTunEnabled) {
+                            detailTunEnabled.textContent = '-';
+                            detailTunEnabled.className = 'fw-bold';
+                        }
+                        
+                        if (detailPorts) {
+                            detailPorts.innerHTML = '<span class="text-muted">暂无端口</span>';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('获取状态失败:', error);
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                if (statusDot) statusDot.classList.remove('running');
+                if (statusText) statusText.textContent = '获取失败';
+            }
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = document.getElementById('autoRefreshToggle').checked;
+            // 同步详细状态页面的开关
+            const detailToggle = document.getElementById('detailAutoRefreshToggle');
+            if (detailToggle) {
+                detailToggle.checked = autoRefreshEnabled;
+            }
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) return;
+            autoRefreshInterval = setInterval(updateStatus, 10000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // 日志功能
+        let logsAutoRefreshEnabled = true;
+        let logsRefreshInterval = null;
+        
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                if (data.success) {
+                    const container = document.getElementById('logsContainer');
+                    if (data.logs.length === 0) {
+                        container.innerHTML = `
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-2">暂无日志</p>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = data.logs.map(line => {
+                            let color = '#e2e8f0';
+                            if (line.toLowerCase().includes('error') || line.toLowerCase().includes('err')) {
+                                color = '#fca5a5';
+                            } else if (line.toLowerCase().includes('warn')) {
+                                color = '#fcd34d';
+                            } else if (line.toLowerCase().includes('info')) {
+                                color = '#93c5fd';
+                            }
+                            return `<div style="margin-bottom: 4px; color: ${color};">${escapeHtml(line)}</div>`;
+                        }).join('');
+                        // 滚动到底部
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+        
+        function startLogsAutoRefresh() {
+            if (logsRefreshInterval) return;
+            logsRefreshInterval = setInterval(loadLogs, 15000);
+        }
+        
+        function stopLogsAutoRefresh() {
+            if (logsRefreshInterval) {
+                clearInterval(logsRefreshInterval);
+                logsRefreshInterval = null;
+            }
+        }
+        
+        // 拓扑图功能
+        function renderTopology() {
+            const container = document.getElementById('topologyContainer');
+            const groups = config['proxy-groups'] || [];
+            
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无代理组</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 创建简单的拓扑图可视化
+            let html = `<div style="padding: 2rem; display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">`;
+            
+            groups.forEach((group, index) => {
+                const color = `hsl(${(index * 60) % 360}, 70%, 60%)`;
+                const proxies = group.proxies || [];
+                
+                html += `
+                    <div style="background: white; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: ${color}; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.25rem;">
+                                ${group.name ? group.name.charAt(0).toUpperCase() : '?'}
+                            </div>
+                            <div>
+                                <h6 style="margin: 0; font-weight: 700;">${escapeHtml(group.name || '未命名')}</h6>
+                                <span class="badge bg-secondary">${group.type || 'select'}</span>
+                            </div>
+                        </div>
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                            <h6 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">代理节点 (${proxies.length})</h6>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                ${proxies.slice(0, 8).map(proxy => 
+                                    `<span class="badge bg-light text-dark" style="border: 1px solid #e2e8f0;">${escapeHtml(proxy)}</span>`
+                                ).join('')}
+                                ${proxies.length > 8 ? `<span class="badge bg-light text-dark" style="border: 1px solid #e2e8f0;">+${proxies.length - 8} 更多</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+        
+        // 流量监控功能
+        let trafficAutoRefreshEnabled = true;
+        let trafficRefreshInterval = null;
+        let currentConnections = [];
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        async function loadTraffic() {
+            try {
+                const response = await fetch('/api/traffic');
+                const data = await response.json();
+                if (data.success) {
+                    const { traffic, connections } = data.data;
+                    currentConnections = connections;
+                    
+                    // 更新流量统计
+                    document.getElementById('upSpeed').textContent = formatBytes(traffic.up || 0) + '/s';
+                    document.getElementById('downSpeed').textContent = formatBytes(traffic.down || 0) + '/s';
+                    document.getElementById('connectionCount').textContent = connections.length;
+                    
+                    // 统计活跃代理
+                    const activeProxies = new Set();
+                    connections.forEach(conn => {
+                        if (conn.chains && conn.chains.length > 0) {
+                            conn.chains.forEach(proxy => activeProxies.add(proxy));
+                        }
+                    });
+                    document.getElementById('activeProxies').textContent = activeProxies.size;
+                    
+                    // 更新连接列表
+                    renderConnections();
+                }
+            } catch (error) {
+                console.error('加载流量失败:', error);
+            }
+        }
+        
+        function renderConnections() {
+            const tableBody = document.getElementById('connectionsTable');
+            const searchTerm = (document.getElementById('connectionSearch')?.value || '').toLowerCase();
+            
+            let connections = currentConnections;
+            if (searchTerm) {
+                connections = connections.filter(conn => {
+                    return (conn.metadata?.host || '').toLowerCase().includes(searchTerm) ||
+                           (conn.metadata?.sourceIP || '').toLowerCase().includes(searchTerm) ||
+                           (conn.chains || []).join(' ').toLowerCase().includes(searchTerm);
+                });
+            }
+            
+            if (connections.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">${searchTerm ? '未找到匹配的连接' : '暂无连接'}</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tableBody.innerHTML = connections.map(conn => {
+                const metadata = conn.metadata || {};
+                const chains = conn.chains || [];
+                const upload = conn.upload || 0;
+                const download = conn.download || 0;
+                
+                return `
+                    <tr>
+                        <td><span class="badge bg-primary">${metadata.network || '-'}</span></td>
+                        <td><code class="text-muted">${metadata.sourceIP || '-'}:${metadata.sourcePort || '-'}</code></td>
+                        <td>
+                            <div class="fw-semibold">${escapeHtml(metadata.host || metadata.destinationIP || '-')}</div>
+                            <small class="text-muted">${metadata.destinationPort || '-'}</small>
+                        </td>
+                        <td>
+                            ${chains.length > 0 ? 
+                                `<span class="badge bg-success">${escapeHtml(chains[chains.length - 1])}</span>` : 
+                                '<span class="text-muted">-</span>'
+                            }
+                        </td>
+                        <td><span class="text-purple fw-semibold">${formatBytes(upload)}</span></td>
+                        <td><span class="text-green fw-semibold">${formatBytes(download)}</span></td>
+                        <td>
+                            ${chains.map((c, i) => 
+                                `<span class="badge bg-light text-dark border" style="font-size: 0.7rem;">${escapeHtml(c)}</span>`
+                            ).join(' → ')}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function startTrafficAutoRefresh() {
+            if (trafficRefreshInterval) return;
+            trafficRefreshInterval = setInterval(loadTraffic, 8000);
+        }
+        
+        function stopTrafficAutoRefresh() {
+            if (trafficRefreshInterval) {
+                clearInterval(trafficRefreshInterval);
+                trafficRefreshInterval = null;
+            }
+        }
+
+
+        // 代理组节点选择功能
+        let proxyGroups = [];
+
+        async function loadProxyGroups() {
+            try {
+                const response = await fetch('/api/proxies/runtime');
+                const data = await response.json();
+                if (data.success) {
+                    proxyGroups = data.proxyGroups;
+                    renderProxyNodes();
+                } else {
+                    showToast('加载代理组失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('加载代理组失败:', error);
+                showToast('加载代理组失败: ' + error.message, 'error');
+            }
+        }
+
+        function renderProxyNodes() {
+            const list = document.getElementById('proxyNodesList');
+            let groups = proxyGroups;
+            
+            // 过滤搜索
+            if (proxyGroupSearchTerm) {
+                groups = groups.filter(g => 
+                    g.name.toLowerCase().includes(proxyGroupSearchTerm.toLowerCase())
+                );
+            }
+            
+            // 过滤掉只有1个选项的代理组
+            groups = groups.filter(g => g.all && g.all.length > 1);
+            
+            if (groups.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h5>${proxyGroupSearchTerm ? '没有找到匹配的代理组' : '暂无可选择的代理组'}</h5>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = groups.map(group => `
+                <div class="list-group-item proxy-group-item d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1 me-3">
+                        <h6 class="mb-1 fw-semibold">${escapeHtml(group.name)}</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-muted small">当前: </span>
+                            <span class="badge bg-success">${escapeHtml(group.now || '未设置')}</span>
+                            <span class="text-muted small ms-3">可用节点: ${group.all.length}</span>
+                        </div>
+                    </div>
+                    <div style="min-width: 300px;">
+                        <select class="form-select proxy-node-select" data-group="${escapeHtml(group.name)}">
+                            <option value="">选择节点...</option>
+                            ${group.all.map(proxy => `
+                                <option value="${escapeHtml(proxy)}" ${proxy === group.now ? 'selected' : ''}>
+                                    ${escapeHtml(proxy)}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectProxyNode(groupName, proxyName) {
+            try {
+                const response = await fetch(`/api/proxies/runtime/${encodeURIComponent(groupName)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: proxyName })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(data.message);
+                    await loadProxyGroups(); // 刷新列表
+                } else {
+                    showToast('切换失败: ' + data.error, 'error');
+                    await loadProxyGroups(); // 刷新以恢复原值
+                }
+            } catch (error) {
+                console.error('切换节点失败:', error);
+                showToast('切换失败: ' + error.message, 'error');
+                await loadProxyGroups();
+            }
+        }
+
+
+
+        // 规则流程图功能
+        let runtimeProxyGroups = [];
+
+        async function loadRuntimeProxyGroups() {
+            try {
+                const response = await fetch('/api/proxies/runtime');
+                const data = await response.json();
+                if (data.success) {
+                    runtimeProxyGroups = data.proxyGroups;
+                    renderRuleFlow();
+                }
+            } catch (error) {
+                console.error('加载运行时代理组失败:', error);
+            }
+        }
+
+        function getProxyGroupCurrent(groupName) {
+            const group = runtimeProxyGroups.find(g => g.name === groupName);
+            return group ? group.now : groupName;
+        }
+
+        function renderRuleFlow() {
+            const container = document.getElementById('ruleFlowContainer');
+            const rules = config.rules || [];
+            
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-2">暂无规则</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="simple-flow-container" style="display: flex; flex-direction: column; gap: 1rem; padding: 2rem;">
+                    <style>
+                        .simple-flow-node {
+                            padding: 1rem 1.5rem;
+                            border-radius: 0.75rem;
+                            text-align: center;
+                            font-weight: 600;
+                            transition: all 0.2s ease;
+                            position: relative;
+                            max-width: 500px;
+                            margin: 0 auto;
+                        }
+                        .simple-flow-node:hover {
+                            transform: scale(1.02);
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                        }
+                        .simple-flow-start {
+                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                            color: white;
+                        }
+                        .simple-flow-rule {
+                            background: white;
+                            border: 2px solid #e2e8f0;
+                            border-left: 4px solid #6366f1;
+                            text-align: left;
+                        }
+                        .simple-flow-rule .rule-index {
+                            position: absolute;
+                            top: -0.75rem;
+                            left: 1rem;
+                            background: #6366f1;
+                            color: white;
+                            width: 1.75rem;
+                            height: 1.75rem;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 0.875rem;
+                            font-weight: 700;
+                        }
+                        .simple-flow-rule .rule-type {
+                            display: inline-block;
+                            padding: 0.25rem 0.75rem;
+                            background: #e0e7ff;
+                            color: #4338ca;
+                            border-radius: 2rem;
+                            font-size: 0.75rem;
+                            font-weight: 700;
+                            margin-right: 0.5rem;
+                        }
+                        .simple-flow-rule .rule-content {
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 0.875rem;
+                            background: #f1f5f9;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 0.375rem;
+                            margin-top: 0.5rem;
+                            word-break: break-all;
+                        }
+                        .simple-flow-rule .rule-target {
+                            margin-top: 0.5rem;
+                            font-size: 0.875rem;
+                            color: #10b981;
+                            font-weight: 600;
+                        }
+                        .simple-flow-end {
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            color: white;
+                        }
+                        .simple-flow-arrow {
+                            text-align: center;
+                            color: #94a3b8;
+                            font-size: 1.5rem;
+                        }
+                        .simple-flow-arrow.miss {
+                            color: #f59e0b;
+                        }
+                    </style>
+                    
+                    <div class="simple-flow-node simple-flow-start">
+                        <i class="bi bi-globe me-2"></i>Request
+                    </div>
+            `;
+
+            rules.forEach((rule, index) => {
+                let ruleType, ruleValue, policy, params;
+                
+                if (typeof rule === 'string') {
+                    const parts = rule.split(',');
+                    ruleType = parts[0] || '';
+                    ruleValue = parts[1] || '';
+                    policy = parts[2] || '';
+                    params = parts.slice(3).join(',') || '';
+                } else {
+                    ruleType = 'Object';
+                    ruleValue = JSON.stringify(rule);
+                    policy = '';
+                }
+                
+                const isLastRule = index === rules.length - 1;
+                
+                html += `
+                    <div class="simple-flow-arrow${!isLastRule ? ' miss' : ''}">
+                        <i class="bi bi-arrow-down"></i>
+                        ${!isLastRule ? '<span style="font-size: 0.75rem; display: block; margin-top: 0.25rem;">未命中</span>' : ''}
+                    </div>
+                    
+                    <div class="simple-flow-node simple-flow-rule">
+                        <div class="rule-index">${index + 1}</div>
+                        <div>
+                            <span class="rule-type">${escapeHtml(ruleType)}</span>
+                            <span style="font-size: 0.875rem;">${escapeHtml(ruleValue || '')}</span>
+                            ${params ? `<span style="font-size: 0.75rem; color: #64748b; margin-left: 0.5rem;">${escapeHtml(params)}</span>` : ''}
+                        </div>
+                        <div class="rule-content">→ ${escapeHtml(policy)}</div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    <div class="simple-flow-arrow">
+                        <i class="bi bi-arrow-down"></i>
+                        <span style="font-size: 0.75rem; display: block; margin-top: 0.25rem; color: #10b981; font-weight: 600;">命中</span>
+                    </div>
+                    
+                    <div class="simple-flow-node simple-flow-end">
+                        <i class="bi bi-check-circle me-2"></i>完成路由
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[DOMContentLoaded] 开始初始化...');
+            
+            // 初始化 Modal
+            proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
+            ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
+            console.log('[DOMContentLoaded] Modal 初始化完成');
+
+            // 加载配置（关键！）
+            console.log('[DOMContentLoaded] 开始加载配置...');
+            loadConfig();
+            loadRawConfig();
+            console.log('[DOMContentLoaded] 配置加载完成');
+
+            updateStatus();
+            startAutoRefresh();
+            loadLogs();
+            startLogsAutoRefresh();
+            loadTraffic();
+            startTrafficAutoRefresh();
+            
+            document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+                link.addEventListener('click', () => {
+                    switchSection(link.dataset.section);
+                });
+            });
+
+            document.querySelectorAll('.quick-action-btn[data-goto]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchSection(btn.dataset.goto);
+                });
+            });
+
+            document.getElementById('quickRestartBtn').addEventListener('click', restartService);
+            
+            const refreshRuleFlowBtn = document.getElementById('refreshRuleFlowBtn');
+            if (refreshRuleFlowBtn) {
+                refreshRuleFlowBtn.addEventListener('click', () => {
+                    renderRuleFlow();
+                });
+            }
+
+            // 代理组配置搜索
+            document.getElementById('proxyGroupsConfigSearch').addEventListener('input', (e) => {
+                proxyGroupsConfigSearchTerm = e.target.value;
+                renderProxyGroups();
+            });
+
+            // 规则搜索
+            document.getElementById('ruleSearch').addEventListener('input', (e) => {
+                ruleSearchTerm = e.target.value;
+                renderRules();
+            });
+
+            // 规则排序
+            document.getElementById('ruleSortSelect').addEventListener('change', (e) => {
+                currentRuleSort = e.target.value;
+                renderRules();
+            });
+
+            // 重置规则顺序
+            document.getElementById('resetRuleOrderBtn').addEventListener('click', () => {
+                currentRuleSort = 'default';
+                document.getElementById('ruleSortSelect').value = 'default';
+                config.rules = [...originalRules];
+                saveAllConfig();
+            });
+
+            // 添加代理组
+            document.getElementById('addProxyGroupBtn').addEventListener('click', () => {
+                editingProxyGroupIndex = -1;
+                document.getElementById('proxyGroupModalTitle').textContent = '添加代理组';
+                document.getElementById('proxyGroupName').value = '';
+                document.getElementById('proxyGroupType').value = 'select';
+                document.getElementById('proxyGroupProxies').value = '';
+                proxyGroupModal.show();
+            });
+
+            // 保存代理组
+            document.getElementById('saveProxyGroupBtn').addEventListener('click', async () => {
+                const name = document.getElementById('proxyGroupName').value.trim();
+                const type = document.getElementById('proxyGroupType').value;
+                const proxiesText = document.getElementById('proxyGroupProxies').value;
+                const proxies = proxiesText.split('\n').map(s => s.trim()).filter(s => s);
+                
+                if (!name) {
+                    showToast('请输入名称', 'error');
+                    return;
+                }
+                
+                const group = { name, type, proxies };
+                
+                if (editingProxyGroupIndex >= 0) {
+                    config['proxy-groups'][editingProxyGroupIndex] = group;
+                } else {
+                    if (!config['proxy-groups']) config['proxy-groups'] = [];
+                    config['proxy-groups'].push(group);
+                }
+                
+                await saveAllConfig();
+                proxyGroupModal.hide();
+            });
+
+            // 添加规则
+            document.getElementById('addRuleBtn').addEventListener('click', () => {
+                editingRuleIndex = -1;
+                document.getElementById('ruleModalTitle').textContent = '添加规则';
+                document.getElementById('ruleType').value = 'DOMAIN';
+                document.getElementById('ruleValue').value = '';
+                document.getElementById('ruleParams').value = '';
+                document.getElementById('ruleValueField').style.display = 'block';
+                populateRulePolicySelect();
+                ruleModal.show();
+            });
+
+            // 规则类型变更
+            document.getElementById('ruleType').addEventListener('change', (e) => {
+                const valueField = document.getElementById('ruleValueField');
+                valueField.style.display = e.target.value === 'MATCH' ? 'none' : 'block';
+            });
+
+            // 保存规则
+            document.getElementById('saveRuleBtn').addEventListener('click', async () => {
+                const type = document.getElementById('ruleType').value;
+                const value = document.getElementById('ruleValue').value.trim();
+                const policy = document.getElementById('rulePolicy').value.trim();
+                const params = document.getElementById('ruleParams').value.trim();
+                
+                if (!policy && type !== 'MATCH') {
+                    showToast('请输入策略', 'error');
+                    return;
+                }
+                
+                let rule = type;
+                if (type !== 'MATCH') {
+                    rule += ',' + value;
+                }
+                rule += ',' + policy;
+                if (params) {
+                    rule += ',' + params;
+                }
+                
+                if (editingRuleIndex >= 0) {
+                    config['rules'][editingRuleIndex] = rule;
+                } else {
+                    if (!config['rules']) config['rules'] = [];
+                    config['rules'].unshift(rule);
+                }
+                
+                await saveAllConfig();
+                ruleModal.hide();
+            });
+
+            // 刷新按钮
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                loadConfig();
+                loadRawConfig();
+            });
+
+            // 保存全部
+            document.getElementById('saveAllBtn').addEventListener('click', saveAllConfig);
+            
+            // 加载原始配置
+            const loadRawConfigBtn = document.getElementById('loadRawConfigBtn');
+            if (loadRawConfigBtn) {
+                loadRawConfigBtn.addEventListener('click', loadRawConfig);
+            }
+            
+            // 保存原始配置
+            const saveRawConfigBtn = document.getElementById('saveRawConfigBtn');
+            if (saveRawConfigBtn) {
+                saveRawConfigBtn.addEventListener('click', saveRawConfig);
+            }
+            
+            // 重启服务
+            document.getElementById('restartServiceBtn').addEventListener('click', restartService);
+
+            // 代理组搜索
+            const proxyGroupSearch = document.getElementById('proxyGroupSearch');
+            if (proxyGroupSearch) {
+                proxyGroupSearch.addEventListener('input', (e) => {
+                    proxyGroupSearchTerm = e.target.value;
+                    renderProxyNodes();
+                });
+            }
+
+            // 刷新代理组按钮
+            const refreshProxyGroupsBtn = document.getElementById('refreshProxyGroupsBtn');
+            if (refreshProxyGroupsBtn) {
+                refreshProxyGroupsBtn.addEventListener('click', loadProxyGroups);
+            }
+
+            // 状态刷新按钮和自动刷新
+            document.getElementById('refreshStatusBtn').addEventListener('click', updateStatus);
+            document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+            // 日志功能
+            const logsAutoRefreshToggle = document.getElementById('logsAutoRefreshToggle');
+            const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+            const clearLogsBtn = document.getElementById('clearLogsBtn');
+            
+            if (logsAutoRefreshToggle) {
+                logsAutoRefreshToggle.addEventListener('change', (e) => {
+                    logsAutoRefreshEnabled = e.target.checked;
+                    if (logsAutoRefreshEnabled) {
+                        startLogsAutoRefresh();
+                    } else {
+                        stopLogsAutoRefresh();
+                    }
+                });
+            }
+            
+            if (refreshLogsBtn) {
+                refreshLogsBtn.addEventListener('click', loadLogs);
+            }
+            
+            if (clearLogsBtn) {
+                clearLogsBtn.addEventListener('click', () => {
+                    document.getElementById('logsContainer').innerHTML = `
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-check-circle" style="font-size: 3rem; color: #22c55e;"></i>
+                            <p class="mt-2">已清空</p>
+                        </div>
+                    `;
+                });
+            }
+
+            // 拓扑图刷新按钮
+            const refreshTopologyBtn = document.getElementById('refreshTopologyBtn');
+            if (refreshTopologyBtn) {
+                refreshTopologyBtn.addEventListener('click', renderTopology);
+            }
+
+            // 流量监控功能
+            const refreshTrafficBtn = document.getElementById('refreshTrafficBtn');
+            const trafficAutoRefreshToggle = document.getElementById('trafficAutoRefreshToggle');
+            const connectionSearch = document.getElementById('connectionSearch');
+            
+            if (refreshTrafficBtn) {
+                refreshTrafficBtn.addEventListener('click', loadTraffic);
+            }
+            
+            if (trafficAutoRefreshToggle) {
+                trafficAutoRefreshToggle.addEventListener('change', (e) => {
+                    trafficAutoRefreshEnabled = e.target.checked;
+                    if (trafficAutoRefreshEnabled) {
+                        startTrafficAutoRefresh();
+                    } else {
+                        stopTrafficAutoRefresh();
+                    }
+                });
+            }
+            
+            if (connectionSearch) {
+                connectionSearch.addEventListener('input', renderConnections);
+            }
+
+            // 详细状态页面的按钮
+            const detailRefreshBtn = document.getElementById('detailRefreshBtn');
+            const detailAutoRefreshToggle = document.getElementById('detailAutoRefreshToggle');
+            
+            if (detailRefreshBtn) {
+                detailRefreshBtn.addEventListener('click', updateStatus);
+            }
+            
+            if (detailAutoRefreshToggle) {
+                detailAutoRefreshToggle.addEventListener('change', (e) => {
+                    // 与顶部状态栏共享同一个自动刷新设置
+                    document.getElementById('autoRefreshToggle').checked = e.target.checked;
+                    toggleAutoRefresh();
+                });
+            }
+
+            // 代理组节点选择 - 使用事件委托避免内存泄漏
+            const proxyNodesList = document.getElementById('proxyNodesList');
+            if (proxyNodesList) {
+                proxyNodesList.addEventListener('change', async (e) => {
+                    const select = e.target.closest('.proxy-node-select');
+                    if (select) {
+                        const groupName = select.dataset.group;
+                        const selectedProxy = select.value;
+                        if (selectedProxy) {
+                            await selectProxyNode(groupName, selectedProxy);
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
