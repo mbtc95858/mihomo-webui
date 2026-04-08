@@ -454,11 +454,26 @@ def get_status():
                     resp = requests.get(f'{controller_url}/configs', headers=headers, timeout=1)
                     if resp.status_code == 200:
                         data = resp.json()
+                        
+                        # 从配置中提取所有端口信息
+                        ports = []
+                        if data.get('port') and data.get('port') > 0:
+                            ports.append(str(data.get('port')))
+                        if data.get('socks-port') and data.get('socks-port') > 0:
+                            ports.append(str(data.get('socks-port')))
+                        if data.get('redir-port') and data.get('redir-port') > 0:
+                            ports.append(str(data.get('redir-port')))
+                        if data.get('tproxy-port') and data.get('tproxy-port') > 0:
+                            ports.append(str(data.get('tproxy-port')))
+                        if data.get('mixed-port') and data.get('mixed-port') > 0:
+                            ports.append(str(data.get('mixed-port')))
+                        
                         return ('config', {
                             'mode': data.get('mode'),
                             'mixed_port': data.get('mixed-port'),
                             'allow_lan': data.get('allow-lan', False),
-                            'tun_enabled': data.get('tun', {}).get('enable', False) if isinstance(data.get('tun'), dict) else False
+                            'tun_enabled': data.get('tun', {}).get('enable', False) if isinstance(data.get('tun'), dict) else False,
+                            'ports': ports
                         })
                 except Exception:
                     pass
@@ -476,6 +491,9 @@ def get_status():
                         status['mixed_port'] = value['mixed_port']
                         status['allow_lan'] = value['allow_lan']
                         status['tun_enabled'] = value['tun_enabled']
+                        # 优先使用从 API 获取的端口信息
+                        if value.get('ports') and len(value['ports']) > 0:
+                            status['ports'] = value['ports']
         
         # 只在 mihomo 运行时才请求 API
         if status['running']:
