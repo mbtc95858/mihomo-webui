@@ -2427,12 +2427,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('[DOMContentLoaded] 开始初始化...');
+            
             // 初始化 Modal
             proxyGroupModal = new bootstrap.Modal(document.getElementById('proxyGroupModal'));
             ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
+            console.log('[DOMContentLoaded] Modal 初始化完成');
 
+            // 加载配置（关键！）
+            console.log('[DOMContentLoaded] 开始加载配置...');
             loadConfig();
             loadRawConfig();
+            console.log('[DOMContentLoaded] 配置加载完成');
+
             updateStatus();
             startAutoRefresh();
             loadLogs();
