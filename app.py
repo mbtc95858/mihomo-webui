@@ -552,11 +552,7 @@ def get_logs():
 
 @app.route('/api/traffic', methods=['GET'])
 def get_traffic():
-    # 检查缓存
-    current_time = time.time()
-    if cache['traffic']['data'] and (current_time - cache['traffic']['time']) < CACHE_TTL:
-        return jsonify(cache['traffic']['data'])
-    
+    # 不使用缓存，因为需要实时数据
     try:
         # 从 mihomo API 获取流量和连接信息
         controller_url = 'http://127.0.0.1:9090'
@@ -569,20 +565,25 @@ def get_traffic():
             'connections': []
         }
         
-        # 获取流量统计
-        try:
-            traffic_response = requests.get(f'{controller_url}/traffic', headers=headers, timeout=2)
-            if traffic_response.status_code == 200:
-                result['traffic'] = traffic_response.json()
-        except Exception as e:
-            pass
-        
-        # 获取连接列表
+        # 获取流量统计 - /traffic 是 SSE，我们需要直接获取最新连接数据
+        # 使用 /connections 中的上传下载统计作为替代
         try:
             connections_response = requests.get(f'{controller_url}/connections', headers=headers, timeout=2)
             if connections_response.status_code == 200:
                 data = connections_response.json()
                 result['connections'] = data.get('connections', [])
+                
+                # 从连接中统计总上传下载
+                total_up = 0
+                total_down = 0
+                for conn in result['connections']:
+                    total_up += conn.get('upload', 0)
+                    total_down += conn.get('download', 0)
+                
+                result['traffic'] = {
+                    'up': total_up,
+                    'down': total_down
+                }
         except Exception as e:
             pass
         
@@ -590,9 +591,6 @@ def get_traffic():
             'success': True,
             'data': result
         }
-        # 保存到缓存
-        cache['traffic']['data'] = response_data
-        cache['traffic']['time'] = time.time()
         return jsonify(response_data)
     except Exception as e:
         return jsonify({
