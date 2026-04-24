@@ -571,8 +571,6 @@
         }
         .conn-speed-up { color: var(--primary); font-weight: 600; font-size: 0.8rem; }
         .conn-speed-down { color: var(--success); font-weight: 600; font-size: 0.8rem; }
-        .conn-host { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
-        .conn-host-sub { font-size: 0.75rem; color: var(--text-muted); }
         .conn-chain-badge {
             font-size: 0.65rem;
             padding: 0.15rem 0.4rem;
@@ -603,18 +601,7 @@
         .conn-quick-filter.active { background: var(--primary-alpha); border-color: var(--primary); color: var(--primary); }
         @media (max-width: 768px) {
             .conn-group-by-bar { flex-wrap: wrap; }
-            .conn-data-row-inner {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                padding: 0.75rem 1rem;
-            }
-            .conn-data-row-inner > div {
-                width: 50%;
-            }
-            .conn-data-row-inner > div:nth-child(even) {
-                text-align: right;
-            }
+            .topTrafficModule { font-size: 0.7rem !important; }
         }
         @media (max-width: 768px) {
             .sidebar {
@@ -687,7 +674,7 @@
                 <i class="bi bi-display"></i><span>状态监控</span>
             </a>
             <a class="sidebar-link" data-section="traffic">
-                <i class="bi bi-speedometer2"></i><span>流量监控</span>
+                <i class="bi bi-diagram-3"></i><span>连接链路</span>
             </a>
             <a class="sidebar-link" data-section="logs">
                 <i class="bi bi-journal-text"></i><span>日志查看</span>
@@ -752,11 +739,17 @@
         </div>
         <div class="top-nav d-flex justify-content-between align-items-center">
             <h5 class="mb-0" id="currentSectionTitle">仪表盘</h5>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary" id="refreshBtn">
+            <div class="d-flex gap-3 align-items-center">
+                <div class="d-flex gap-2 align-items-center" id="topTrafficModule" style="font-size:0.8rem;">
+                    <span style="color:var(--primary);font-weight:600;"><i class="bi bi-arrow-up"></i> <span id="topUpSpeed">0 B/s</span></span>
+                    <span style="color:var(--success);font-weight:600;"><i class="bi bi-arrow-down"></i> <span id="topDownSpeed">0 B/s</span></span>
+                    <span class="text-muted"><i class="bi bi-people"></i> <span id="topConnCount">0</span></span>
+                </div>
+                <div style="width:1px;height:20px;background:var(--border-color);"></div>
+                <button class="btn btn-outline-secondary btn-sm" id="refreshBtn">
                     <i class="bi bi-arrow-clockwise me-1"></i> 刷新
                 </button>
-                <button class="btn btn-primary" id="saveAllBtn">
+                <button class="btn btn-primary btn-sm" id="saveAllBtn">
                     <i class="bi bi-save me-1"></i> 保存全部
                 </button>
             </div>
@@ -1417,96 +1410,9 @@
             </div>
 
             <div class="content-section" id="section-traffic">
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <div class="card h-100" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); border: none; color: white;">
-                            <div class="card-body text-center">
-                                <i class="bi bi-arrow-up-circle" style="font-size: 2rem; opacity: 0.8;"></i>
-                                <div class="stat-label mt-1">上行速率</div>
-                                <h4 class="fw-bold mb-0" id="upSpeed">0 B/s</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100" style="background: linear-gradient(135deg, #059669 0%, #34d399 100%); border: none; color: white;">
-                            <div class="card-body text-center">
-                                <i class="bi bi-arrow-down-circle" style="font-size: 2rem; opacity: 0.8;"></i>
-                                <div class="stat-label mt-1">下行速率</div>
-                                <h4 class="fw-bold mb-0" id="downSpeed">0 B/s</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100" style="background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); border: none; color: white;">
-                            <div class="card-body text-center">
-                                <i class="bi bi-people" style="font-size: 2rem; opacity: 0.8;"></i>
-                                <div class="stat-label mt-1">当前连接</div>
-                                <h4 class="fw-bold mb-0" id="connectionCount">0</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100" style="background: linear-gradient(135deg, #d946ef 0%, #f472b6 100%); border: none; color: white;">
-                            <div class="card-body text-center">
-                                <i class="bi bi-collection" style="font-size: 2rem; opacity: 0.8;"></i>
-                                <div class="stat-label mt-1">活跃代理</div>
-                                <h4 class="fw-bold mb-0" id="activeProxies">0</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="bi bi-activity me-2"></i>流量趋势</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="traffic-chart-container">
-                                    <canvas id="trafficDetailChart" class="traffic-chart-canvas"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>连接状态分布</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="text-center mb-3">
-                                    <div style="width:160px;height:160px;margin:0 auto;position:relative;">
-                                        <canvas id="connDetailPieChart" width="160" height="160"></canvas>
-                                        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-                                            <span class="fw-bold fs-3" id="detailConnTotal">0</span>
-                                            <span class="small text-muted">总连接</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-4 text-center">
-                                        <span class="conn-state-badge active">活跃</span>
-                                        <div class="fw-bold mt-1" id="detailActiveConns">0</div>
-                                    </div>
-                                    <div class="col-4 text-center">
-                                        <span class="conn-state-badge closing">关闭中</span>
-                                        <div class="fw-bold mt-1" id="detailClosingConns">0</div>
-                                    </div>
-                                    <div class="col-4 text-center">
-                                        <span class="conn-state-badge closed">已关闭</span>
-                                        <div class="fw-bold mt-1" id="detailClosedConns">0</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
                 <div class="card">
                     <div class="card-header">
                         <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0"><i class="bi bi-ethernet me-2"></i>连接列表</h6>
                             <div class="d-flex gap-2 align-items-center">
                                 <div class="search-box">
                                     <i class="bi bi-search"></i>
@@ -1515,6 +1421,13 @@
                                 <button class="conn-quick-filter" id="connFilterDirect" title="过滤 DIRECT 连接">
                                     <i class="bi bi-funnel"></i> 过滤直连
                                 </button>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="d-flex gap-2 align-items-center me-2" style="font-size:0.8rem;">
+                                    <span style="color:var(--primary);"><i class="bi bi-arrow-up"></i> <span id="upSpeed">0 B/s</span></span>
+                                    <span style="color:var(--success);"><i class="bi bi-arrow-down"></i> <span id="downSpeed">0 B/s</span></span>
+                                    <span class="text-muted"><i class="bi bi-people"></i> <span id="connectionCount">0</span></span>
+                                </div>
                                 <div class="form-check form-switch mb-0">
                                     <input class="form-check-input" type="checkbox" id="trafficAutoRefreshToggle" checked>
                                     <label class="form-check-label text-muted" for="trafficAutoRefreshToggle">自动</label>
@@ -1538,7 +1451,7 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div id="connectionsContainer" style="max-height: 60vh; overflow-y: auto;">
+                        <div id="connectionsContainer" style="max-height: calc(100vh - 280px); overflow-y: auto;">
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-hourglass-split" style="font-size: 2.5rem; opacity: 0.4;"></i>
                                 <p class="mt-2 mb-0">加载连接中...</p>
@@ -1921,7 +1834,7 @@
                 'rules': '规则',
                 'rule-flow': '规则流程图',
                 'status': '状态监控',
-                'traffic': '流量监控',
+                'traffic': '连接链路',
                 'logs': '日志查看',
                 'raw-editor': '原始编辑器'
             };
@@ -2796,20 +2709,6 @@
             drawPieChart('connPieChart', states);
         }
         
-        function updateTrafficDetail(upRate, downRate, connections) {
-            const states = analyzeConnectionStates(connections);
-            const detailConnTotal = document.getElementById('detailConnTotal');
-            const detailActiveConns = document.getElementById('detailActiveConns');
-            const detailClosingConns = document.getElementById('detailClosingConns');
-            const detailClosedConns = document.getElementById('detailClosedConns');
-            if (detailConnTotal) detailConnTotal.textContent = states.total;
-            if (detailActiveConns) detailActiveConns.textContent = states.active;
-            if (detailClosingConns) detailClosingConns.textContent = states.closing;
-            if (detailClosedConns) detailClosedConns.textContent = states.closed;
-            
-            drawPieChart('connDetailPieChart', states);
-        }
-        
         function sortConnections(field) {
             if (connectionSortField === field) {
                 connectionSortAsc = !connectionSortAsc;
@@ -2857,22 +2756,22 @@
                         trafficHistory.down.shift();
                     }
                     
-                    document.getElementById('upSpeed').textContent = formatRate(upRate);
-                    document.getElementById('downSpeed').textContent = formatRate(downRate);
-                    document.getElementById('connectionCount').textContent = connections.length;
+                    const upSpeedEl = document.getElementById('upSpeed');
+                    const downSpeedEl = document.getElementById('downSpeed');
+                    const connCountEl = document.getElementById('connectionCount');
+                    if (upSpeedEl) upSpeedEl.textContent = formatRate(upRate);
+                    if (downSpeedEl) downSpeedEl.textContent = formatRate(downRate);
+                    if (connCountEl) connCountEl.textContent = connections.length;
                     
-                    const activeProxies = new Set();
-                    connections.forEach(conn => {
-                        if (conn.chains && conn.chains.length > 0) {
-                            conn.chains.forEach(proxy => activeProxies.add(proxy));
-                        }
-                    });
-                    document.getElementById('activeProxies').textContent = activeProxies.size;
+                    const topUpSpeed = document.getElementById('topUpSpeed');
+                    const topDownSpeed = document.getElementById('topDownSpeed');
+                    const topConnCount = document.getElementById('topConnCount');
+                    if (topUpSpeed) topUpSpeed.textContent = formatRate(upRate);
+                    if (topDownSpeed) topDownSpeed.textContent = formatRate(downRate);
+                    if (topConnCount) topConnCount.textContent = connections.length;
                     
                     updateDashboardTraffic(upRate, downRate, connections);
-                    updateTrafficDetail(upRate, downRate, connections);
                     drawTrafficChart('trafficChart', trafficHistory);
-                    drawTrafficChart('trafficDetailChart', trafficHistory);
                     
                     renderConnections();
                 }
@@ -2925,36 +2824,23 @@
             const download = conn.download || 0;
             const state = getConnectionState(conn);
             const proxy = chains.length > 0 ? chains[chains.length - 1] : '';
+            const host = metadata.host || metadata.destinationIP || '-';
+            const port = metadata.destinationPort || '';
             
             return `
-                <div class="conn-data-row" style="animation-delay: ${Math.min(index * 0.03, 0.3)}s;">
-                    <div class="conn-data-row-inner" style="display:grid;grid-template-columns:32px 70px 1fr 120px 90px 90px;align-items:center;gap:0.75rem;padding:0.65rem 1rem;">
-                        <button class="conn-close-btn" onclick="closeConnection('${conn.id || ''}')" title="关闭连接">
+                <div class="conn-data-row" style="animation-delay: ${Math.min(index * 0.02, 0.2)}s;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 1rem;font-size:0.8rem;white-space:nowrap;">
+                        <button class="conn-close-btn" onclick="closeConnection('${conn.id || ''}')" title="关闭连接" style="width:20px;height:20px;font-size:0.6rem;">
                             <i class="bi bi-x"></i>
                         </button>
-                        <div>
-                            <span class="conn-state-badge ${state}">${state === 'active' ? '活跃' : state === 'closing' ? '关闭中' : '已关闭'}</span>
-                        </div>
-                        <div style="min-width:0;">
-                            <div class="conn-host">${escapeHtml(metadata.host || metadata.destinationIP || '-')}</div>
-                            <div class="d-flex gap-1 align-items-center flex-wrap" style="margin-top:2px;">
-                                <span class="badge" style="font-size:0.6rem;background:var(--bg-secondary);color:var(--text-secondary);">${metadata.network || '-'}</span>
-                                <span class="conn-host-sub">${metadata.destinationPort || ''}</span>
-                                ${proxy ? `<span class="conn-proxy-badge">${escapeHtml(proxy)}</span>` : ''}
-                            </div>
-                        </div>
-                        <div style="min-width:0;">
-                            <div class="d-flex flex-wrap gap-0.5">
-                                ${chains.map(c => `<span class="conn-chain-badge">${escapeHtml(c)}</span>`).join('<span style="color:var(--text-muted);font-size:0.6rem;">›</span>')}
-                            </div>
-                        </div>
-                        <div>
-                            <div class="conn-speed-up">${formatBytes(upload)}</div>
-                            <div class="conn-speed-down">${formatBytes(download)}</div>
-                        </div>
-                        <div>
-                            <code style="font-size:0.7rem;color:var(--text-muted);">${metadata.sourceIP || '-'}:${metadata.sourcePort || ''}</code>
-                        </div>
+                        <span class="conn-state-badge ${state}" style="font-size:0.6rem;padding:0.1rem 0.35rem;">${state === 'active' ? '活跃' : state === 'closing' ? '关闭中' : '已关闭'}</span>
+                        <span class="badge" style="font-size:0.6rem;background:var(--bg-secondary);color:var(--text-secondary);min-width:30px;text-align:center;">${metadata.network || '-'}</span>
+                        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:var(--text-primary);" title="${escapeHtml(host)}${port ? ':' + port : ''}">${escapeHtml(host)}${port ? `<span style="color:var(--text-muted);font-weight:400;">:${port}</span>` : ''}</span>
+                        ${proxy ? `<span class="conn-proxy-badge" style="font-size:0.6rem;padding:0.1rem 0.35rem;flex-shrink:0;">${escapeHtml(proxy)}</span>` : ''}
+                        <span style="color:var(--text-muted);font-size:0.65rem;flex-shrink:0;max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${chains.map(c => escapeHtml(c)).join(' → ')}">${chains.length > 1 ? `<span style="color:var(--text-muted);">…</span>${escapeHtml(chains[chains.length - 1])}` : chains.map(c => escapeHtml(c)).join('›')}</span>
+                        <span class="conn-speed-up" style="font-size:0.7rem;min-width:60px;text-align:right;">↑${formatBytes(upload)}</span>
+                        <span class="conn-speed-down" style="font-size:0.7rem;min-width:60px;text-align:right;">↓${formatBytes(download)}</span>
+                        <code style="font-size:0.65rem;color:var(--text-muted);flex-shrink:0;">${metadata.sourceIP || '-'}:${metadata.sourcePort || ''}</code>
                     </div>
                 </div>
             `;
