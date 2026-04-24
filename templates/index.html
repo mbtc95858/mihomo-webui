@@ -445,6 +445,177 @@
         .conn-state-badge.active { background: rgba(16,185,129,0.15); color: #059669; }
         .conn-state-badge.closing { background: rgba(245,158,11,0.15); color: #d97706; }
         .conn-state-badge.closed { background: rgba(148,163,184,0.15); color: #64748b; }
+        .conn-group-by-bar {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-secondary);
+            padding: 0.25rem;
+            border-radius: var(--radius-md);
+        }
+        .conn-group-by-btn {
+            padding: 0.35rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+        .conn-group-by-btn:hover {
+            color: var(--primary);
+            background: var(--primary-alpha);
+        }
+        .conn-group-by-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+        .conn-group-row {
+            background: var(--primary-alpha);
+            cursor: pointer;
+            transition: background var(--transition-fast);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .conn-group-row:hover {
+            background: rgba(99, 102, 241, 0.12);
+        }
+        .conn-group-cell {
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .conn-group-chevron {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: transform var(--transition-normal);
+            flex-shrink: 0;
+        }
+        .conn-group-chevron.expanded {
+            transform: rotate(90deg);
+        }
+        .conn-group-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+        }
+        .conn-group-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .conn-group-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.15rem 0.5rem;
+            border-radius: 1rem;
+            flex-shrink: 0;
+        }
+        .conn-group-children {
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .conn-group-children.collapsed {
+            max-height: 0 !important;
+        }
+        .conn-data-row {
+            animation: connFadeIn 0.3s ease-out backwards;
+            border-bottom: 1px solid var(--bg-secondary);
+            transition: background var(--transition-fast);
+        }
+        .conn-data-row:hover {
+            background: var(--bg-primary);
+        }
+        @keyframes connFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .conn-close-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-fast);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        .conn-close-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.1);
+        }
+        .conn-speed-up { color: var(--primary); font-weight: 600; font-size: 0.8rem; }
+        .conn-speed-down { color: var(--success); font-weight: 600; font-size: 0.8rem; }
+        .conn-host { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+        .conn-host-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .conn-chain-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        .conn-proxy-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+            font-weight: 600;
+        }
+        .conn-quick-filter {
+            padding: 0.35rem 0.75rem;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .conn-quick-filter:hover { border-color: var(--primary); color: var(--primary); }
+        .conn-quick-filter.active { background: var(--primary-alpha); border-color: var(--primary); color: var(--primary); }
+        @media (max-width: 768px) {
+            .conn-group-by-bar { flex-wrap: wrap; }
+            .conn-data-row-inner {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+            }
+            .conn-data-row-inner > div {
+                width: 50%;
+            }
+            .conn-data-row-inner > div:nth-child(even) {
+                text-align: right;
+            }
+        }
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -1333,57 +1504,45 @@
                 </div>
                 
                 <div class="card">
-                    <div class="card-header d-flex flex-wrap gap-3 justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-ethernet me-2"></i>连接列表</h6>
-                        <div class="d-flex gap-2">
-                            <input type="text" class="form-control" style="width: 200px;" id="connectionSearch" placeholder="搜索...">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="trafficAutoRefreshToggle" checked>
-                                <label class="form-check-label text-muted" for="trafficAutoRefreshToggle">自动刷新</label>
+                    <div class="card-header">
+                        <div class="d-flex flex-wrap gap-3 justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-ethernet me-2"></i>连接列表</h6>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="search-box">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" class="form-control" style="width: 180px;" id="connectionSearch" placeholder="搜索连接...">
+                                </div>
+                                <button class="conn-quick-filter" id="connFilterDirect" title="过滤 DIRECT 连接">
+                                    <i class="bi bi-funnel"></i> 过滤直连
+                                </button>
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" id="trafficAutoRefreshToggle" checked>
+                                    <label class="form-check-label text-muted" for="trafficAutoRefreshToggle">自动</label>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" id="refreshTrafficBtn">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
                             </div>
-                            <button class="btn btn-outline-primary" id="refreshTrafficBtn">
-                                <i class="bi bi-arrow-clockwise me-1"></i> 刷新
-                            </button>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="text-muted" style="font-size:0.8rem;font-weight:600;">展示方式</span>
+                            <div class="conn-group-by-bar" id="connGroupByBar">
+                                <button class="conn-group-by-btn active" data-group-by="none">列表</button>
+                                <button class="conn-group-by-btn" data-group-by="chains">链路</button>
+                                <button class="conn-group-by-btn" data-group-by="host">主机</button>
+                                <button class="conn-group-by-btn" data-group-by="type">类型</button>
+                                <button class="conn-group-by-btn" data-group-by="process">进程</button>
+                                <button class="conn-group-by-btn" data-group-by="rule">规则</button>
+                                <button class="conn-group-by-btn" data-group-by="sourceIP">源地址</button>
+                            </div>
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-                            <table class="table table-hover mb-0 align-middle">
-                                <thead class="sticky-top bg-light" style="z-index: 10;">
-                                    <tr>
-                                        <th style="min-width: 60px;">状态</th>
-                                        <th style="min-width: 80px; cursor: pointer;" onclick="sortConnections('network')">
-                                            协议 <span class="sort-arrow" id="sort-network"></span>
-                                        </th>
-                                        <th style="min-width: 120px; cursor: pointer;" onclick="sortConnections('source')">
-                                            源地址 <span class="sort-arrow" id="sort-source"></span>
-                                        </th>
-                                        <th style="min-width: 150px; cursor: pointer;" onclick="sortConnections('destination')">
-                                            目标地址 <span class="sort-arrow" id="sort-destination"></span>
-                                        </th>
-                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('proxy')">
-                                            策略/代理 <span class="sort-arrow" id="sort-proxy"></span>
-                                        </th>
-                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('upload')">
-                                            上行 <span class="sort-arrow" id="sort-upload"></span>
-                                        </th>
-                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('download')">
-                                            下行 <span class="sort-arrow" id="sort-download"></span>
-                                        </th>
-                                        <th style="min-width: 100px; cursor: pointer;" onclick="sortConnections('chains')">
-                                            链 <span class="sort-arrow" id="sort-chains"></span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody id="connectionsTable">
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">
-                                            <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
-                                            <p class="mt-2 mb-0">加载连接中...</p>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div id="connectionsContainer" style="max-height: 60vh; overflow-y: auto;">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-hourglass-split" style="font-size: 2.5rem; opacity: 0.4;"></i>
+                                <p class="mt-2 mb-0">加载连接中...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1567,6 +1726,10 @@
         const TRAFFIC_HISTORY_MAX = 60;
         
         let sidebarCollapsed = false;
+        
+        let connGroupBy = 'none';
+        let connExpandedGroups = new Set();
+        let connFilterDirect = false;
         
         // 全局清理函数 - 页面卸载前执行，防止刷新后定时器/事件叠加
         function cleanupAll() {
@@ -2718,20 +2881,113 @@
             }
         }
         
+        function getConnGroupKey(conn, groupBy) {
+            const metadata = conn.metadata || {};
+            const chains = conn.chains || [];
+            switch (groupBy) {
+                case 'chains': return chains.length > 0 ? chains.join(' → ') : '无链路';
+                case 'host': return metadata.host || metadata.destinationIP || '未知主机';
+                case 'type': return metadata.network || '未知类型';
+                case 'process': return metadata.process || '未知进程';
+                case 'rule': return conn.rule || '未知规则';
+                case 'sourceIP': return metadata.sourceIP || '未知源';
+                default: return null;
+            }
+        }
+        
+        function getGroupIcon(groupBy) {
+            switch (groupBy) {
+                case 'chains': return 'bi-diagram-3';
+                case 'host': return 'bi-globe';
+                case 'type': return 'bi-hdd-network';
+                case 'process': return 'bi-cpu';
+                case 'rule': return 'bi-shield-check';
+                case 'sourceIP': return 'bi-geo-alt';
+                default: return 'bi-folder';
+            }
+        }
+        
+        function groupConnections(connections, groupBy) {
+            if (groupBy === 'none') return null;
+            const groups = new Map();
+            connections.forEach(conn => {
+                const key = getConnGroupKey(conn, groupBy);
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(conn);
+            });
+            return groups;
+        }
+        
+        function renderConnRow(conn, index) {
+            const metadata = conn.metadata || {};
+            const chains = conn.chains || [];
+            const upload = conn.upload || 0;
+            const download = conn.download || 0;
+            const state = getConnectionState(conn);
+            const proxy = chains.length > 0 ? chains[chains.length - 1] : '';
+            
+            return `
+                <div class="conn-data-row" style="animation-delay: ${Math.min(index * 0.03, 0.3)}s;">
+                    <div class="conn-data-row-inner" style="display:grid;grid-template-columns:32px 70px 1fr 120px 90px 90px;align-items:center;gap:0.75rem;padding:0.65rem 1rem;">
+                        <button class="conn-close-btn" onclick="closeConnection('${conn.id || ''}')" title="关闭连接">
+                            <i class="bi bi-x"></i>
+                        </button>
+                        <div>
+                            <span class="conn-state-badge ${state}">${state === 'active' ? '活跃' : state === 'closing' ? '关闭中' : '已关闭'}</span>
+                        </div>
+                        <div style="min-width:0;">
+                            <div class="conn-host">${escapeHtml(metadata.host || metadata.destinationIP || '-')}</div>
+                            <div class="d-flex gap-1 align-items-center flex-wrap" style="margin-top:2px;">
+                                <span class="badge" style="font-size:0.6rem;background:var(--bg-secondary);color:var(--text-secondary);">${metadata.network || '-'}</span>
+                                <span class="conn-host-sub">${metadata.destinationPort || ''}</span>
+                                ${proxy ? `<span class="conn-proxy-badge">${escapeHtml(proxy)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="min-width:0;">
+                            <div class="d-flex flex-wrap gap-0.5">
+                                ${chains.map(c => `<span class="conn-chain-badge">${escapeHtml(c)}</span>`).join('<span style="color:var(--text-muted);font-size:0.6rem;">›</span>')}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="conn-speed-up">${formatBytes(upload)}</div>
+                            <div class="conn-speed-down">${formatBytes(download)}</div>
+                        </div>
+                        <div>
+                            <code style="font-size:0.7rem;color:var(--text-muted);">${metadata.sourceIP || '-'}:${metadata.sourcePort || ''}</code>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         function renderConnections() {
-            const tableBody = document.getElementById('connectionsTable');
+            const container = document.getElementById('connectionsContainer');
+            if (!container) return;
             const searchTerm = (document.getElementById('connectionSearch')?.value || '').toLowerCase();
             
             let connections = [...currentConnections];
-            if (searchTerm) {
+            
+            if (connFilterDirect) {
                 connections = connections.filter(conn => {
-                    return (conn.metadata?.host || '').toLowerCase().includes(searchTerm) ||
-                           (conn.metadata?.sourceIP || '').toLowerCase().includes(searchTerm) ||
-                           (conn.chains || []).join(' ').toLowerCase().includes(searchTerm);
+                    const chains = conn.chains || [];
+                    const proxy = chains.length > 0 ? chains[chains.length - 1] : '';
+                    return proxy.toUpperCase() !== 'DIRECT';
                 });
             }
             
-            // 排序功能
+            if (searchTerm) {
+                connections = connections.filter(conn => {
+                    const metadata = conn.metadata || {};
+                    const chains = conn.chains || [];
+                    return (metadata.host || '').toLowerCase().includes(searchTerm) ||
+                           (metadata.sourceIP || '').toLowerCase().includes(searchTerm) ||
+                           (metadata.destinationIP || '').toLowerCase().includes(searchTerm) ||
+                           chains.join(' ').toLowerCase().includes(searchTerm) ||
+                           (conn.rule || '').toLowerCase().includes(searchTerm) ||
+                           (metadata.process || '').toLowerCase().includes(searchTerm);
+                });
+            }
+            
             if (connectionSortField) {
                 connections.sort((a, b) => {
                     let aVal, bVal;
@@ -2739,91 +2995,108 @@
                     const metadataB = b.metadata || {};
                     const chainsA = a.chains || [];
                     const chainsB = b.chains || [];
-                    
                     switch (connectionSortField) {
-                        case 'network':
-                            aVal = metadataA.network || '';
-                            bVal = metadataB.network || '';
-                            break;
-                        case 'source':
-                            aVal = `${metadataA.sourceIP || ''}:${metadataA.sourcePort || ''}`;
-                            bVal = `${metadataB.sourceIP || ''}:${metadataB.sourcePort || ''}`;
-                            break;
-                        case 'destination':
-                            aVal = `${metadataA.host || metadataA.destinationIP || ''}:${metadataA.destinationPort || ''}`;
-                            bVal = `${metadataB.host || metadataB.destinationIP || ''}:${metadataB.destinationPort || ''}`;
-                            break;
-                        case 'proxy':
-                            aVal = chainsA.length > 0 ? chainsA[chainsA.length - 1] : '';
-                            bVal = chainsB.length > 0 ? chainsB[chainsB.length - 1] : '';
-                            break;
-                        case 'upload':
-                            aVal = a.upload || 0;
-                            bVal = b.upload || 0;
-                            return connectionSortAsc ? (aVal - bVal) : (bVal - aVal);
-                        case 'download':
-                            aVal = a.download || 0;
-                            bVal = b.download || 0;
-                            return connectionSortAsc ? (aVal - bVal) : (bVal - aVal);
-                        case 'chains':
-                            aVal = chainsA.join(' → ');
-                            bVal = chainsB.join(' → ');
-                            break;
-                        default:
-                            aVal = '';
-                            bVal = '';
+                        case 'network': aVal = metadataA.network || ''; bVal = metadataB.network || ''; break;
+                        case 'source': aVal = `${metadataA.sourceIP||''}:${metadataA.sourcePort||''}`; bVal = `${metadataB.sourceIP||''}:${metadataB.sourcePort||''}`; break;
+                        case 'destination': aVal = `${metadataA.host||metadataA.destinationIP||''}:${metadataA.destinationPort||''}`; bVal = `${metadataB.host||metadataB.destinationIP||''}:${metadataB.destinationPort||''}`; break;
+                        case 'proxy': aVal = chainsA.length>0?chainsA[chainsA.length-1]:''; bVal = chainsB.length>0?chainsB[chainsB.length-1]:''; break;
+                        case 'upload': aVal = a.upload||0; bVal = b.upload||0; return connectionSortAsc?(aVal-bVal):(bVal-aVal);
+                        case 'download': aVal = a.download||0; bVal = b.download||0; return connectionSortAsc?(aVal-bVal):(bVal-aVal);
+                        case 'chains': aVal = chainsA.join('→'); bVal = chainsB.join('→'); break;
+                        default: aVal = ''; bVal = '';
                     }
-                    
-                    // 字符串排序
                     const strCompare = aVal.localeCompare(bVal);
                     return connectionSortAsc ? strCompare : -strCompare;
                 });
             }
             
             if (connections.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
-                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-                            <p class="mt-2 mb-0">${searchTerm ? '未找到匹配的连接' : '暂无连接'}</p>
-                        </td>
-                    </tr>
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h6 class="mt-2">${searchTerm ? '未找到匹配的连接' : connFilterDirect ? '无代理连接（已过滤直连）' : '暂无连接'}</h6>
+                    </div>
                 `;
                 return;
             }
             
-            tableBody.innerHTML = connections.map(conn => {
-                const metadata = conn.metadata || {};
-                const chains = conn.chains || [];
-                const upload = conn.upload || 0;
-                const download = conn.download || 0;
-                const state = getConnectionState(conn);
+            if (connGroupBy === 'none') {
+                container.innerHTML = connections.map((conn, i) => renderConnRow(conn, i)).join('');
+                return;
+            }
+            
+            const groups = groupConnections(connections, connGroupBy);
+            if (!groups) { container.innerHTML = ''; return; }
+            
+            const icon = getGroupIcon(connGroupBy);
+            let html = '';
+            let globalIdx = 0;
+            
+            const sortedGroups = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+            
+            sortedGroups.forEach(([groupKey, conns]) => {
+                const isExpanded = connExpandedGroups.has(groupKey);
+                const totalUp = conns.reduce((s, c) => s + (c.upload || 0), 0);
+                const totalDown = conns.reduce((s, c) => s + (c.download || 0), 0);
                 
-                return `
-                    <tr>
-                        <td><span class="conn-state-badge ${state}">${state === 'active' ? '活跃' : state === 'closing' ? '关闭中' : '已关闭'}</span></td>
-                        <td><span class="badge bg-primary">${metadata.network || '-'}</span></td>
-                        <td><code class="text-muted">${metadata.sourceIP || '-'}:${metadata.sourcePort || '-'}</code></td>
-                        <td>
-                            <div class="fw-semibold">${escapeHtml(metadata.host || metadata.destinationIP || '-')}</div>
-                            <small class="text-muted">${metadata.destinationPort || '-'}</small>
-                        </td>
-                        <td>
-                            ${chains.length > 0 ? 
-                                `<span class="badge bg-success">${escapeHtml(chains[chains.length - 1])}</span>` : 
-                                '<span class="text-muted">-</span>'
-                            }
-                        </td>
-                        <td><span class="text-purple fw-semibold">${formatBytes(upload)}</span></td>
-                        <td><span class="text-green fw-semibold">${formatBytes(download)}</span></td>
-                        <td>
-                            ${chains.map((c, i) => 
-                                `<span class="badge bg-light text-dark border" style="font-size: 0.7rem;">${escapeHtml(c)}</span>`
-                            ).join(' → ')}
-                        </td>
-                    </tr>
+                html += `
+                    <div class="conn-group-row" data-group-key="${escapeHtml(groupKey)}">
+                        <div class="conn-group-cell" onclick="toggleConnGroup('${escapeHtml(groupKey).replace(/'/g, "\\'")}')">
+                            <div class="conn-group-chevron ${isExpanded ? 'expanded' : ''}">
+                                <i class="bi bi-chevron-right"></i>
+                            </div>
+                            <div class="conn-group-icon">
+                                <i class="bi ${icon}"></i>
+                            </div>
+                            <div class="conn-group-name" title="${escapeHtml(groupKey)}">${escapeHtml(groupKey)}</div>
+                            <div style="display:flex;gap:0.75rem;align-items:center;flex-shrink:0;">
+                                <span class="conn-speed-up" style="font-size:0.7rem;">↑${formatBytes(totalUp)}</span>
+                                <span class="conn-speed-down" style="font-size:0.7rem;">↓${formatBytes(totalDown)}</span>
+                                <span class="conn-group-count">${conns.length} 连接</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="conn-group-children ${isExpanded ? '' : 'collapsed'}" data-children-of="${escapeHtml(groupKey)}" ${isExpanded ? `style="max-height:${conns.length * 80}px;"` : ''}>
+                        ${conns.map(conn => { const row = renderConnRow(conn, globalIdx++); return row; }).join('')}
+                    </div>
                 `;
-            }).join('');
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleConnGroup(groupKey) {
+            if (connExpandedGroups.has(groupKey)) {
+                connExpandedGroups.delete(groupKey);
+            } else {
+                connExpandedGroups.add(groupKey);
+            }
+            const row = document.querySelector(`.conn-group-row[data-group-key="${CSS.escape(groupKey)}"] .conn-group-chevron`);
+            if (row) row.classList.toggle('expanded');
+            const children = document.querySelector(`.conn-group-children[data-children-of="${CSS.escape(groupKey)}"]`);
+            if (children) {
+                children.classList.toggle('collapsed');
+                if (!children.classList.contains('collapsed')) {
+                    const conns = children.querySelectorAll('.conn-data-row');
+                    children.style.maxHeight = (conns.length * 80) + 'px';
+                }
+            }
+        }
+        
+        async function closeConnection(connId) {
+            if (!connId) return;
+            try {
+                const resp = await fetch('/api/connections/' + connId, { method: 'DELETE' });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('连接已关闭', 'success');
+                    loadTraffic();
+                } else {
+                    showToast(data.message || '关闭连接失败', 'danger');
+                }
+            } catch (e) {
+                showToast('关闭连接请求失败', 'danger');
+            }
         }
         
         function startTrafficAutoRefresh() {
@@ -3410,6 +3683,28 @@
             
             if (connectionSearch) {
                 connectionSearch.addEventListener('input', renderConnections);
+            }
+            
+            const connGroupByBar = document.getElementById('connGroupByBar');
+            if (connGroupByBar) {
+                connGroupByBar.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.conn-group-by-btn');
+                    if (!btn) return;
+                    connGroupByBar.querySelectorAll('.conn-group-by-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    connGroupBy = btn.dataset.groupBy;
+                    connExpandedGroups.clear();
+                    renderConnections();
+                });
+            }
+            
+            const connFilterDirectBtn = document.getElementById('connFilterDirect');
+            if (connFilterDirectBtn) {
+                connFilterDirectBtn.addEventListener('click', () => {
+                    connFilterDirect = !connFilterDirect;
+                    connFilterDirectBtn.classList.toggle('active', connFilterDirect);
+                    renderConnections();
+                });
             }
 
             // 详细状态页面的按钮

@@ -570,51 +570,55 @@ def get_logs():
 
 @app.route('/api/traffic', methods=['GET'])
 def get_traffic():
-    # 不使用缓存，因为需要实时数据
     try:
-        # 从 mihomo API 获取流量和连接信息
         controller_url = 'http://127.0.0.1:9090'
         secret = '123456'
-        
         headers = {'Authorization': f'Bearer {secret}'} if secret else {}
-        
-        result = {
-            'traffic': {'up': 0, 'down': 0},
-            'connections': []
-        }
-        
-        # 获取流量统计 - /traffic 是 SSE，我们需要直接获取最新连接数据
-        # 使用 /connections 中的上传下载统计作为替代
+        result = {'traffic': {'up': 0, 'down': 0}, 'connections': []}
         try:
             connections_response = requests.get(f'{controller_url}/connections', headers=headers, timeout=2)
             if connections_response.status_code == 200:
                 data = connections_response.json()
                 result['connections'] = data.get('connections', [])
-                
-                # 从连接中统计总上传下载
                 total_up = 0
                 total_down = 0
                 for conn in result['connections']:
                     total_up += conn.get('upload', 0)
                     total_down += conn.get('download', 0)
-                
-                result['traffic'] = {
-                    'up': total_up,
-                    'down': total_down
-                }
-        except Exception as e:
+                result['traffic'] = {'up': total_up, 'down': total_down}
+        except Exception:
             pass
-        
-        response_data = {
-            'success': True,
-            'data': result
-        }
-        return jsonify(response_data)
+        return jsonify({'success': True, 'data': result})
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/connections/<conn_id>', methods=['DELETE'])
+def close_connection(conn_id):
+    try:
+        controller_url = 'http://127.0.0.1:9090'
+        secret = '123456'
+        headers = {'Authorization': f'Bearer {secret}'} if secret else {}
+        resp = requests.delete(f'{controller_url}/connections/{conn_id}', headers=headers, timeout=3)
+        if resp.status_code in [200, 204]:
+            return jsonify({'success': True, 'message': '连接已关闭'})
+        return jsonify({'success': False, 'message': f'关闭失败: HTTP {resp.status_code}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+
+@app.route('/api/connections/close_all', methods=['DELETE'])
+def close_all_connections():
+    try:
+        controller_url = 'http://127.0.0.1:9090'
+        secret = '123456'
+        headers = {'Authorization': f'Bearer {secret}'} if secret else {}
+        resp = requests.delete(f'{controller_url}/connections', headers=headers, timeout=3)
+        if resp.status_code in [200, 204]:
+            return jsonify({'success': True, 'message': '所有连接已关闭'})
+        return jsonify({'success': False, 'message': f'关闭失败: HTTP {resp.status_code}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 
 @app.route('/api/proxies/runtime', methods=['GET'])
